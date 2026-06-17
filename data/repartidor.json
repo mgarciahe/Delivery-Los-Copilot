@@ -1,0 +1,61 @@
+{
+  "nombre": "Carlos Valenzuela",
+  "correo": "juan.delivery@copilot.com",
+  "contrasenia": "password123",
+  "motocicleta": {
+    "marca": "Honda",
+    "modelo": "CB190R",
+    "placa": "M-4589X",
+    "color": "Rojo Deportivo"
+  },
+  "licencia": {
+    "numero": "0102-150890-101-2",
+    "expiracion": "2029-12-31"
+  },
+  "disponible": true,
+  "alertasActivas": false,
+  "gpsActivo": true,
+  "gananciasAcumuladas": 1250.5,
+  "puntosAcumulados": 350,
+  "pedidosHoy": 0,
+  "pedidoActivo": {
+    "id": "ORD-692",
+    "proveedor": "Tacos El Pastorcito",
+    "proveedorDireccion": "Diagonal 6, 10-22, Zona 10",
+    "proveedorCoords": {
+      "lat": 14.61589,
+      "lng": -90.53489
+    },
+    "cliente": "Luis Fernando Ortiz",
+    "clienteDireccion": "Residenciales Alamedas, Calle 3, Zona 15",
+    "clienteCoords": {
+      "lat": 14.62012,
+      "lng": -90.50123
+    },
+    "detalles": [
+      "1x Combo Premium Sushi (18 piezas)",
+      "1x Té Frío de Limón"
+    ],
+    "pago": 20.52,
+    "puntos": 11,
+    "tiempoSimulado": "20-25 min"
+  },
+  "historialEntregas": [
+    {
+      "id": "ORD-089",
+      "fecha": "2026-06-17T09:30:00.000Z",
+      "proveedor": "Pizzería La Toscana",
+      "cliente": "Carlos Mendoza",
+      "pago": 150,
+      "puntos": 40
+    },
+    {
+      "id": "ORD-090",
+      "fecha": "2026-06-17T10:15:00.000Z",
+      "proveedor": "Burgers & Beers",
+      "cliente": "Ana Sofía Gómez",
+      "pago": 120,
+      "puntos": 30
+    }
+  ]
+}

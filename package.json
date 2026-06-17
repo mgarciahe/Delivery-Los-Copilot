@@ -1,14 +1,28 @@
 {
   "name": "delivery-los-copilot",
   "version": "1.0.0",
-  "description": "Aplicación web de entregas - Módulo Proveedor y Menús",
-  "main": "app.js",
+  "description": "Aplicación web de entregas - Delivery Los Copilot - Proyecto Unificado",
+  "main": "server.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "node --watch app.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mgarciahe/Delivery-Los-Copilot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mgarciahe/Delivery-Los-Copilot/issues"
+  },
+  "homepage": "https://github.com/mgarciahe/Delivery-Los-Copilot#readme",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
