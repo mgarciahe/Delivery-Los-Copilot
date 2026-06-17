@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Los Copilots - Delivery Premium</title>
+  <meta name="description"
+    content="Plataforma de delivery premium con comparador de precios en tiempo real, rastreo en vivo y los mejores menús a tu disposición.">
+  <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- CSS Stylesheet Global Consolidado -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand" id="btn-home">
+        <div class="logo-icon">
+          <i class="fa-solid fa-rocket"></i>
+        </div>
+        <span class="brand-name">Los <span class="highlight">Copilots</span></span>
+      </div>
+
+      <!-- Address selector for customers -->
+      <div class="delivery-location" id="header-location">
+        <i class="fa-solid fa-location-dot loc-icon"></i>
+        <div class="location-details">
+          <span class="loc-title">Entregar en</span>
+          <select id="select-address" class="loc-select">
+            <option value="home">Mi Casa (Calle Principal #123)</option>
+            <option value="office">Oficina (Av. Central #456)</option>
+            <option value="univ">Universidad (Campus Norte)</option>
+            <option value="new">+ Agregar nueva dirección...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="user-status-wrapper">
+        <div class="user-actions">
+          <!-- Button to switch to Provider Portal -->
+          <button class="btn btn-outline" id="btn-portal-socios"><i class="fa-solid fa-store"></i> Portal Socios</button>
+          
+          <span id="user-anonymous" class="user-actions-anon">
+            <button class="btn btn-outline" id="btn-show-login"><i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión</button>
+            <button class="btn btn-primary" id="btn-show-register"><i class="fa-solid fa-user-plus"></i> Registrarse</button>
+          </span>
+
+          <span id="user-logged" class="user-profile hidden">
+            <span class="user-avatar" id="user-avatar-trigger">
+              <span class="avatar-initials" id="profile-initials">M</span>
+              <span class="status-indicator"></span>
+            </span>
+            <div class="profile-dropdown hidden" id="profile-dropdown">
+              <div class="dropdown-header">
+                <span class="user-fullname" id="profile-fullname">Cliente</span>
+                <span class="user-email" id="profile-email">cliente@example.com</span>
+              </div>
+              <hr>
+              <button class="dropdown-item" id="btn-go-history"><i class="fa-solid fa-clock-rotate-left"></i> Mis Pedidos</button>
+              <button class="dropdown-item danger" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+            </div>
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div id="notification" class="toast hidden">
+    <div class="toast-content">
+      <i class="fa-solid fa-circle-check toast-icon"></i>
+      <span id="toast-message">Mensaje de notificación</span>
+    </div>
+  </div>
+
+  <!-- Global Alerts Box for Dashboard -->
+  <div id="dashboard-alert" class="toast hidden" style="background-color: var(--danger); border-radius: var(--radius-md); padding: 16px;">
+    <div class="toast-content" style="background: transparent; box-shadow: none; padding: 0;">
+      <i class="fa-solid fa-circle-exclamation toast-icon" style="color: white;"></i>
+      <span id="dashboard-alert-msg" style="color: white; font-weight: 600;">Mensaje de error</span>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="main-content-wrapper">
+
+    <!-- VIEW 1: Customer Auth Screen (Login / Register) -->
+    <section id="view-auth" class="auth-section hidden">
+      <div class="auth-card">
+        <!-- Auth Tabs -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login">Iniciar Sesión</button>
+          <button class="auth-tab" id="tab-register">Crear Cuenta</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="form-login" class="auth-form">
+          <h2 class="auth-title">Bienvenido de vuelta 🍕</h2>
+          <p class="auth-subtitle">Accede para comparar menús y ordenar en segundos.</p>
+
+          <div class="form-group">
+            <label for="login-email">Correo Electrónico</label>
+            <div class="input-wrapper">
+              <i class="fa-regular fa-envelope input-icon"></i>
+              <input type="email" id="login-email" required placeholder="correo@ejemplo.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="form-register" class="auth-form hidden">
+          <h2 class="auth-title">Únete a Los Copilots 🚀</h2>
+          <p class="auth-subtitle">Regístrate y encuentra la opción más económica de inmediato.</p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="register-name">Nombre</label>
+              <div class="input-wrapper">
+                <i class="fa-regular fa-user input-icon"></i>
+                <input type="text" id="register-name" required placeholder="Ej. Miguel">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="register-lastname">Apellido</label>
+              <div class="input-wrapper">
+                <i class="fa-regular fa-user input-icon"></i>
+                <input type="text" id="register-lastname" required placeholder="Ej. García">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-email">Correo Electrónico</label>
+            <div class="input-wrapper">
+              <i class="fa-regular fa-envelope input-icon"></i>
+              <input type="email" id="register-email" required placeholder="miguel@ejemplo.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-password">Contraseña</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="register-password" required placeholder="Mínimo 6 caracteres">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Crear Cuenta</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 2: Customer Dashboard / Menus Explorer -->
+    <section id="view-dashboard" class="dashboard-section">
+      <!-- Hero Promo Banner -->
+      <div class="hero-banner">
+        <div class="hero-content">
+          <span class="hero-badge"><i class="fa-solid fa-fire"></i> Envío Gratis en tu primer pedido</span>
+          <h1>¿Qué se te antoja hoy?</h1>
+          <p>Compara menús en tiempo real y encuentra el precio más accesible con nuestro semáforo inteligente.</p>
+
+          <!-- Search Bar and Fast Actions -->
+          <div class="search-container">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="search-menus"
+                placeholder="Busca pizza, hamburguesas, sushi o tu proveedor favorito...">
+              <button class="btn btn-primary" id="btn-search-trigger">Buscar</button>
+            </div>
+          </div>
+        </div>
+        <div class="hero-image">
+          <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80"
+            alt="Platillos Deliciosos">
+        </div>
+      </div>
+
+      <!-- Controls (Filters, Sorting, Price Guide) -->
+      <div class="controls-panel">
+        <div class="price-legend">
+          <span class="legend-title">Semáforo de Precios:</span>
+          <div class="legend-items">
+            <span class="legend-tag budget"><span class="color-dot"></span> Económico (Más barato)</span>
+            <span class="legend-tag moderate"><span class="color-dot"></span> Moderado (Intermedio)</span>
+            <span class="legend-tag expensive"><span class="color-dot"></span> Premium (Más exclusivo)</span>
+          </div>
+        </div>
+
+        <div class="filters-wrapper">
+          <div class="filter-group" id="categories-container">
+            <button class="filter-pill active" data-category="all">Todos</button>
+            <button class="filter-pill" data-category="combos"><i class="fa-solid fa-burger"></i> Combos</button>
+            <button class="filter-pill" data-category="antojos"><i class="fa-solid fa-pepper-hot"></i> Antojos</button>
+            <button class="filter-pill" data-category="hamburguesa"><i class="fa-solid fa-hamburger"></i> Hamburguesas</button>
+            <button class="filter-pill" data-category="pizza"><i class="fa-solid fa-pizza-slice"></i> Pizza</button>
+            <button class="filter-pill" data-category="sushi"><i class="fa-solid fa-fish"></i> Sushi/Asiático</button>
+            <button class="filter-pill" data-category="postres"><i class="fa-solid fa-ice-cream"></i> Postres</button>
+          </div>
+
+          <div class="sort-wrapper">
+            <i class="fa-solid fa-arrow-down-wide-short sort-icon"></i>
+            <select id="sort-menus" class="sort-select">
+              <option value="relevant">Más Relevantes</option>
+              <option value="price-asc">Precio: Menor a Mayor</option>
+              <option value="price-desc">Precio: Mayor a Menor</option>
+              <option value="time-asc">Entrega: Más rápida</option>
+              <option value="rating-desc">Mejor Calificados</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menus Grid -->
+      <div class="section-header">
+        <h2 class="section-title">Menús Disponibles</h2>
+        <span class="results-count" id="results-count">Mostrando menús...</span>
+      </div>
+
+      <div class="menus-grid" id="menus-grid">
+        <!-- Rendered dynamically by JavaScript connecting to MySQL -->
+        <div class="empty-state">
+          <i class="fa-solid fa-circle-notch fa-spin fa-3x" style="margin-bottom: 1.5rem; color: var(--primary);"></i>
+          <h3>Conectando con la base de datos...</h3>
+          <p>Cargando los platillos y calculando semáforo en tiempo real.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: Live Order Tracker -->
+    <section id="view-tracker" class="tracker-section hidden">
+      <div class="tracker-container">
+        <!-- Live Map and Header -->
+        <div class="tracker-header-box">
+          <button class="btn btn-text" id="btn-back-dashboard"><i class="fa-solid fa-arrow-left"></i> Volver a Explorar</button>
+          <div class="tracker-title-row">
+            <div>
+              <h2>¡Tu pedido está en camino! 🚀</h2>
+              <p>Código del Pedido: <strong id="track-order-id">#COP-84920</strong></p>
+            </div>
+            <div class="eta-box">
+              <span class="eta-label">Tiempo Estimado</span>
+              <span class="eta-time" id="track-eta">20 - 30 min</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tracker-layout">
+          <!-- Tracker Info Column -->
+          <div class="tracker-info-panel">
+            <!-- Progress Stepper -->
+            <div class="stepper">
+              <div class="step active" id="step-1">
+                <div class="step-icon-wrapper">
+                  <div class="step-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                </div>
+                <div class="step-details">
+                  <h4>Pedido Confirmado</h4>
+                  <p>Hemos registrado tu orden en la base de datos de MySQL.</p>
+                </div>
+              </div>
+              <div class="step" id="step-2">
+                <div class="step-icon-wrapper">
+                  <div class="step-icon"><i class="fa-solid fa-kitchen-set"></i></div>
+                </div>
+                <div class="step-details">
+                  <h4>Preparando tu comida</h4>
+                  <p>El restaurante está cocinando tus productos.</p>
+                </div>
+              </div>
+              <div class="step" id="step-3">
+                <div class="step-icon-wrapper">
+                  <div class="step-icon"><i class="fa-solid fa-motorcycle"></i></div>
+                </div>
+                <div class="step-details">
+                  <h4>En camino</h4>
+                  <p>El repartidor asignado lleva tu pedido.</p>
+                </div>
+              </div>
+              <div class="step" id="step-4">
+                <div class="step-icon-wrapper">
+                  <div class="step-icon"><i class="fa-solid fa-house-chimney-user"></i></div>
+                </div>
+                <div class="step-details">
+                  <h4>¡Entregado!</h4>
+                  <p>¡Buen provecho! Tu comida ha llegado.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Driver & Merchant Details -->
+            <div class="delivery-details-card">
+              <h3>Datos de Entrega</h3>
+
+              <!-- Driver profile -->
+              <div class="profile-card">
+                <div class="profile-photo">
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+                    alt="Repartidor" id="driver-avatar">
+                </div>
+                <div class="profile-info">
+                  <span class="profile-role">Tu repartidor</span>
+                  <h4 id="driver-name">Juan Carlos Pérez</h4>
+                  <div class="rating-badge">
+                    <i class="fa-solid fa-star"></i>
+                    <span id="driver-rating">4.8</span>
+                  </div>
+                </div>
+                <div class="profile-action">
+                  <a href="tel:#" class="btn-circle"><i class="fa-solid fa-phone"></i></a>
+                  <a href="#" class="btn-circle"><i class="fa-solid fa-message"></i></a>
+                </div>
+              </div>
+
+              <!-- Merchant details -->
+              <div class="merchant-mini-info">
+                <div class="merchant-icon">
+                  <i class="fa-solid fa-store"></i>
+                </div>
+                <div class="merchant-text">
+                  <span class="text-muted">Comercio</span>
+                  <h4 id="track-merchant-name">Restaurante</h4>
+                  <p id="track-merchant-address"><i class="fa-solid fa-location-dot"></i> Cargando dirección...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Route Simulation Map -->
+          <div class="tracker-map-panel">
+            <div class="simulated-map" id="simulated-map">
+              <svg class="map-svg-overlay" viewBox="0 0 500 400">
+                <path d="M 100 300 Q 250 200 400 100" fill="transparent" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round" />
+                <path id="route-progress-line" d="M 100 300 Q 250 200 400 100" fill="transparent"
+                  stroke="var(--primary)" stroke-width="6" stroke-linecap="round" stroke-dasharray="400" stroke-dashoffset="400" />
+
+                <!-- Store Marker -->
+                <g class="map-marker store-marker" transform="translate(100, 300)">
+                  <circle cx="0" cy="0" r="14" fill="var(--danger)" />
+                  <i class="fa-solid fa-store marker-icon"></i>
+                  <text x="-30" y="32" class="marker-label">Restaurante</text>
+                </g>
+
+                <!-- User Home Marker -->
+                <g class="map-marker home-marker" transform="translate(400, 100)">
+                  <circle cx="0" cy="0" r="14" fill="var(--success)" />
+                  <i class="fa-solid fa-house marker-icon"></i>
+                  <text x="-15" y="32" class="marker-label">Tú</text>
+                </g>
+
+                <!-- Driver Moving Bike G -->
+                <g id="map-driver-bike" class="map-marker bike-marker" transform="translate(100, 300)">
+                  <circle cx="0" cy="0" r="18" fill="var(--primary)" class="pulse-ring" />
+                  <circle cx="0" cy="0" r="14" fill="var(--primary)" />
+                  <i class="fa-solid fa-motorcycle marker-icon"></i>
+                </g>
+              </svg>
+              <div class="map-background-grid"></div>
+              <div class="map-legend">Mapa de Entrega (Simulado)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: Provider Auth (Login / Register) -->
+    <section id="view-provider-auth" class="provider-auth-section hidden">
+      <div class="provider-auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-provider-login">Ingreso Socios</button>
+          <button class="auth-tab" id="tab-provider-register">Registro Restaurante</button>
+        </div>
+
+        <!-- Provider Login Form -->
+        <form id="form-provider-login" class="auth-form">
+          <h2 class="auth-title">Acceso Restaurantes 🏪</h2>
+          <p class="auth-subtitle">Ingresa para administrar tu menú y despachar pedidos.</p>
+
+          <div class="form-group">
+            <label for="provider-login-email">Correo Electrónico del Comercio</label>
+            <div class="input-wrapper">
+              <i class="fa-regular fa-envelope input-icon"></i>
+              <input type="email" id="provider-login-email" required placeholder="admin@restaurante.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="provider-login-password">Contraseña</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="provider-login-password" required placeholder="••••••••">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Entrar al Panel</button>
+        </form>
+
+        <!-- Provider Register Form -->
+        <form id="form-provider-register" class="auth-form hidden">
+          <h2 class="auth-title">Registrar tu Comercio 🚀</h2>
+          <p class="auth-subtitle">Únete a la red y vende a miles de consumidores.</p>
+
+          <div class="form-group">
+            <label for="provider-reg-name">Nombre Comercial del Restaurante</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-store input-icon"></i>
+              <input type="text" id="provider-reg-name" required placeholder="Ej. Pizzería Bella Vista">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="provider-reg-email">Correo de Contacto</label>
+            <div class="input-wrapper">
+              <i class="fa-regular fa-envelope input-icon"></i>
+              <input type="email" id="provider-reg-email" required placeholder="admin@pizzeria.com">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="provider-reg-tel">Teléfono</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-phone input-icon"></i>
+                <input type="tel" id="provider-reg-tel" required placeholder="2233-4455">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="provider-reg-dir">Dirección Física</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-location-dot input-icon"></i>
+                <input type="text" id="provider-reg-dir" required placeholder="Calle Las Palmeras, Local #5">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="provider-reg-dist">Distancia (km)</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-route input-icon"></i>
+                <input type="number" step="0.1" id="provider-reg-dist" required placeholder="2.5">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="provider-reg-time">Tiempo de Entrega (min)</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-clock input-icon"></i>
+                <input type="number" id="provider-reg-time" required placeholder="25">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="provider-reg-password">Contraseña</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="provider-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Crear Cuenta de Socio</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 5: Provider Dashboard -->
+    <section id="view-provider-dashboard" class="provider-dashboard-layout hidden">
+      <!-- Sidebar Navigation -->
+      <aside class="provider-sidebar">
+        <div class="provider-profile-card">
+          <div class="provider-avatar-circle">
+            <i class="fa-solid fa-store"></i>
+          </div>
+          <div class="provider-profile-info">
+            <h3 id="sidebar-provider-name">Cargando...</h3>
+            <span class="provider-status"><span class="provider-pulse-dot"></span>Online</span>
+          </div>
+        </div>
+
+        <nav class="provider-nav">
+          <ul class="provider-nav-list">
+            <li>
+              <button class="provider-nav-btn active" data-section="p-section-menu">
+                <i class="fa-solid fa-utensils"></i>
+                <span>Gestionar Menú</span>
+              </button>
+            </li>
+            <li>
+              <button class="provider-nav-btn" data-section="p-section-orders">
+                <i class="fa-solid fa-receipt"></i>
+                <span>Pedidos Recibidos</span>
+                <span class="badge hidden" id="sidebar-orders-badge">0</span>
+              </button>
+            </li>
+            <li>
+              <button class="provider-nav-btn" data-section="p-section-payments">
+                <i class="fa-solid fa-credit-card"></i>
+                <span>Métodos de Pago</span>
+              </button>
+            </li>
+            <li>
+              <button class="provider-nav-btn" data-section="p-section-analytics">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Analíticas</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+          <!-- Exit to customer portal button -->
+          <button class="btn btn-outline btn-block" id="btn-provider-exit" style="padding: 8px 12px; font-size: 0.85rem;">
+            <i class="fa-solid fa-house"></i> Portal Cliente
+          </button>
+          
+          <button class="logout-btn btn-block" id="btn-provider-logout" style="border: 1px solid #fee2e2; border-radius: var(--radius-md); padding: 10px; font-weight: 700; background-color: #fef2f2; color: var(--danger); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Dashboard Panel -->
+      <div class="provider-main-content">
+        <!-- Content Header -->
+        <header class="provider-section-header">
+          <div>
+            <h2 class="provider-section-title" id="provider-section-title">Gestionar Menú</h2>
+          </div>
+          <div class="header-date" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-calendar-days"></i>
+            <span id="provider-live-date">Cargando fecha...</span>
+          </div>
+        </header>
+
+        <!-- SECCIÓN: GESTIONAR MENÚ -->
+        <div id="p-section-menu" class="provider-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Agrega, edita y remueve platillos de tu menú visible para los clientes.</p>
+            <button class="btn btn-primary" id="btn-add-platillo">
+              <i class="fa-solid fa-plus"></i>
+              <span>Agregar Platillo</span>
+            </button>
+          </div>
+
+          <div class="provider-table-card">
+            <table class="provider-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Descripción</th>
+                  <th>Categoría</th>
+                  <th>Precio</th>
+                  <th>Estado</th>
+                  <th style="text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="provider-platillos-tbody">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECCIÓN: PEDIDOS RECIBIDOS -->
+        <div id="p-section-orders" class="provider-section hidden">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Pedidos entrantes de tu restaurante. Cambia el estado para notificar al cliente.</p>
+            <button class="btn btn-secondary" id="btn-refresh-orders">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Actualizar</span>
+            </button>
+          </div>
+
+          <div class="provider-orders-grid" id="provider-orders-container">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+
+        <!-- SECCIÓN: MÉTODOS DE PAGO -->
+        <div id="p-section-payments" class="provider-section hidden">
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Habilita o deshabilita los métodos de pago disponibles para tus clientes en el comercio.</p>
+          
+          <div class="provider-payment-grid">
+            <div class="provider-payment-card">
+              <div class="payment-header">
+                <i class="fa-solid fa-money-bill-wave payment-icon green" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 1.5rem; padding: 10px; border-radius: 8px;"></i>
+                <div class="payment-meta" style="margin-left: 12px;">
+                  <h3 style="font-size: 0.95rem; font-weight: 700;">Pago en Efectivo</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-muted);">El cliente paga al recibir el delivery</p>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="prov-pay-cash" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="provider-payment-card">
+              <div class="payment-header">
+                <i class="fa-solid fa-credit-card payment-icon blue" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 1.5rem; padding: 10px; border-radius: 8px;"></i>
+                <div class="payment-meta" style="margin-left: 12px;">
+                  <h3 style="font-size: 0.95rem; font-weight: 700;">Tarjeta de Crédito / Débito</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-muted);">Visa, Mastercard y American Express</p>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="prov-pay-card" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="provider-payment-card">
+              <div class="payment-header">
+                <i class="fa-solid fa-building-columns payment-icon purple" style="background: rgba(168, 85, 247, 0.1); color: #a855f7; font-size: 1.5rem; padding: 10px; border-radius: 8px;"></i>
+                <div class="payment-meta" style="margin-left: 12px;">
+                  <h3 style="font-size: 0.95rem; font-weight: 700;">Transferencia Bancaria</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-muted);">Transferencia electrónica directa ACH</p>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="prov-pay-bank">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="payment-footer-alert" style="margin-top: 24px; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 12px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+            <i class="fa-solid fa-circle-info" style="font-size: 1rem; color: #3b82f6;"></i>
+            <span>Los cambios en los métodos de pago se aplican de forma inmediata en las pasarelas del cliente.</span>
+          </div>
+        </div>
+
+        <!-- SECCIÓN: ANALÍTICAS -->
+        <div id="p-section-analytics" class="provider-section hidden">
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Estadísticas de facturación, volumen y rendimiento de los platillos más populares.</p>
+          
+          <div class="provider-metrics-grid">
+            <div class="provider-metric-card">
+              <div class="provider-metric-icon primary"><i class="fa-solid fa-dollar-sign"></i></div>
+              <div class="provider-metric-info">
+                <span class="provider-metric-label">Ingresos Totales</span>
+                <h3 class="provider-metric-value" id="prov-metric-revenue">Q0.00</h3>
+              </div>
+            </div>
+
+            <div class="provider-metric-card">
+              <div class="provider-metric-icon info"><i class="fa-solid fa-clipboard-list"></i></div>
+              <div class="provider-metric-info">
+                <span class="provider-metric-label">Pedidos Totales</span>
+                <h3 class="provider-metric-value" id="prov-metric-orders">0</h3>
+              </div>
+            </div>
+
+            <div class="provider-metric-card">
+              <div class="provider-metric-icon success"><i class="fa-solid fa-circle-check"></i></div>
+              <div class="provider-metric-info">
+                <span class="provider-metric-label">Pedidos Entregados</span>
+                <h3 class="provider-metric-value" id="prov-metric-completed">0</h3>
+              </div>
+            </div>
+
+            <div class="provider-metric-card">
+              <div class="provider-metric-icon danger"><i class="fa-solid fa-circle-xmark"></i></div>
+              <div class="provider-metric-info">
+                <span class="provider-metric-label">Tasa de Cancelación</span>
+                <h3 class="provider-metric-value" id="prov-metric-canceled">0%</h3>
+              </div>
+            </div>
+          </div>
+
+          <div class="provider-analytics-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+              <h3 style="font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-fire" style="color: var(--primary); margin-right: 6px;"></i> Platillos Más Vendidos</h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Por volumen de unidades</span>
+            </div>
+            <ul class="provider-top-list" id="prov-top-menus-list">
+              <!-- Injected dynamically -->
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- PRODUCT DETAIL MODAL (CUSTOMER ORDERING) -->
+  <div id="product-modal" class="modal hidden">
+    <div class="modal-overlay" id="modal-close-overlay"></div>
+    <div class="modal-card">
+      <button class="modal-close-btn" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+
+      <div class="modal-grid">
+        <!-- Image Area -->
+        <div class="modal-image-panel">
+          <img src="" alt="Comida" id="modal-food-img">
+          <div class="modal-discount-tag hidden" id="modal-discount-badge">20% OFF</div>
+        </div>
+
+        <!-- Description and Provider Info -->
+        <div class="modal-info-panel">
+          <div class="modal-header-info">
+            <h2 id="modal-food-name">Hamburguesa Clásica</h2>
+            <div class="price-row">
+              <span class="modal-price" id="modal-price">Q8.50</span>
+              <span class="modal-price-old hidden" id="modal-price-old">Q10.50</span>
+            </div>
+            <p class="modal-description" id="modal-description">Exquisito medallón de carne de res premium al grill...</p>
+          </div>
+
+          <div class="provider-info-card">
+            <h3>Proveedor</h3>
+            <div class="provider-header">
+              <div class="provider-logo">
+                <i class="fa-solid fa-utensils"></i>
+              </div>
+              <div class="provider-details-text">
+                <h4 id="modal-provider-name">Burgers Premium Copilot</h4>
+                <div class="provider-rating">
+                  <div class="stars" id="modal-provider-stars">
+                    <!-- Dynamic Stars -->
+                  </div>
+                  <span class="rating-num" id="modal-provider-rating-score">4.7</span>
+                  <span class="reviews-count" id="modal-provider-reviews-count">(124 reseñas)</span>
+                </div>
+              </div>
+            </div>
+            <div class="provider-address">
+              <i class="fa-solid fa-location-dot"></i>
+              <span id="modal-provider-address">Av. Reforma 10-25, Zona 10</span>
+            </div>
+
+            <!-- Provider reviews list -->
+            <div class="provider-reviews-section">
+              <h5>Reseñas destacadas</h5>
+              <div class="reviews-list" id="modal-reviews-list">
+                <!-- Dynamic Reviews -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkout actions inside modal -->
+          <div class="modal-actions">
+            <div class="quantity-selector">
+              <button class="qty-btn" id="qty-minus"><i class="fa-solid fa-minus"></i></button>
+              <span class="qty-num" id="qty-count">1</span>
+              <button class="qty-btn" id="qty-plus"><i class="fa-solid fa-plus"></i></button>
+            </div>
+            <button class="btn btn-primary btn-lg grow" id="btn-place-order">
+              <i class="fa-solid fa-cart-shopping"></i> Confirmar Pedido (<span id="modal-total-price">Q8.50</span>)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT PLATILLO (PROVIDER) -->
+  <div class="modal hidden" id="platillo-modal" style="display: flex; align-items: center; justify-content: center;">
+    <div class="modal-overlay" id="platillo-modal-overlay"></div>
+    <div class="modal-card" style="max-width: 480px; z-index: 1050; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+        <h3 id="modal-platillo-title" style="font-size: 1.25rem;">Agregar Nuevo Platillo</h3>
+        <button class="modal-close-btn" id="btn-close-platillo-modal" style="position: static; padding: 4px;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <form id="platillo-form">
+        <input type="hidden" id="form-platillo-id">
+        
+        <div class="form-group">
+          <label for="form-nombre">Nombre del Platillo</label>
+          <div class="input-wrapper">
+            <input type="text" id="form-nombre" placeholder="Ej. Hamburguesa Triple Queso" required style="padding-left: 14px;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="form-desc">Descripción / Ingredientes</label>
+          <textarea id="form-desc" placeholder="Ingredientes, acompañamiento y tamaño del plato..." rows="3" style="width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px; outline: none; font-family: inherit; font-size: 0.95rem; resize: none;"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-precio">Precio de Venta (Q)</label>
+            <div class="input-wrapper">
+              <input type="number" step="0.01" id="form-precio" placeholder="15.99" required style="padding-left: 14px;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="form-categoria">Categoría</label>
+            <select id="form-categoria" required style="width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 11px; outline: none; background: white; font-weight: 600;">
+              <option value="combos">combos</option>
+              <option value="antojos">antojos</option>
+              <option value="hamburguesa">hamburguesa</option>
+              <option value="pizza">pizza</option>
+              <option value="sushi">sushi</option>
+              <option value="postres">postres</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin: 16px 0; display: flex; align-items: center;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+            <input type="checkbox" id="form-disponible" checked style="width: 18px; height: 18px; cursor: pointer;">
+            <span>Disponible para venta inmediata</span>
+          </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+          <button type="button" class="btn btn-outline" id="btn-cancel-platillo">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="modal-submit-btn">Guardar Platillo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="app-footer" id="app-footer">
+    <div class="footer-container">
+      <p>&copy; 2026 Los Copilots Delivery. Desarrollado en conjunto por el Equipo de Programación.</p>
+    </div>
+  </footer>
+
+  <!-- App Javascript Unificado -->
+  <script src="js/app.js"></script>
+</body>
+
+</html>

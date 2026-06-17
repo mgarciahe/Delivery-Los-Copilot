@@ -24,6 +24,8 @@ CREATE TABLE `restaurantes` (
     `nombre` VARCHAR(100) NOT NULL COMMENT 'Nombre comercial del restaurante',
     `direccion` VARCHAR(255) NULL COMMENT 'Dirección física del establecimiento',
     `telefono` VARCHAR(20) NULL COMMENT 'Teléfono de contacto',
+    `email` VARCHAR(100) UNIQUE COMMENT 'Correo electrónico único de acceso',
+    `password` VARCHAR(255) NULL COMMENT 'Contraseña encriptada con bcrypt',
     `distancia_km` DECIMAL(3, 1) NOT NULL DEFAULT 0.0 COMMENT 'Distancia en kilómetros al usuario',
     `tiempo_entrega_min` INT NOT NULL DEFAULT 0 COMMENT 'Tiempo estimado de entrega en minutos',
     `activo` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Estado del restaurante: 1 = Activo, 0 = Inactivo',
@@ -58,21 +60,8 @@ CREATE INDEX `idx_categoria_precio` ON `platillos` (`categoria`, `precio`);
 CREATE INDEX `idx_restaurante_categoria` ON `platillos` (`id_restaurante`, `categoria`);
 
 -- =============================================================================
--- INSERCIÓN DE DATOS DE PRUEBA (DATA SEEDING ORIGINAL - REMOVIDO PARA PRODUCCIÓN)
+-- TABLA: pedidos
 -- =============================================================================
-
-
-
--- =============================================================================
--- ACTUALIZACIÓN DE LA BASE DE DATOS (AGREGADO AL FINAL DEL SCRIPT)
--- =============================================================================
-
--- 1. Comando ALTER TABLE a la tabla restaurantes para agregar email y password
-ALTER TABLE `restaurantes` 
-    ADD COLUMN `email` VARCHAR(100) UNIQUE COMMENT 'Correo electrónico único de acceso' AFTER `telefono`,
-    ADD COLUMN `password` VARCHAR(255) NULL COMMENT 'Contraseña encriptada con bcrypt' AFTER `email`;
-
--- 2. Estructura relacional simulada para las tablas pedidos y detalle_pedidos
 CREATE TABLE `pedidos` (
     `id` INT AUTO_INCREMENT COMMENT 'Clave primaria autoincremental del pedido',
     `id_restaurante` INT NOT NULL COMMENT 'Relación con el restaurante que procesa el pedido',
@@ -90,6 +79,9 @@ CREATE TABLE `pedidos` (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- =============================================================================
+-- TABLA: detalle_pedidos
+-- =============================================================================
 CREATE TABLE `detalle_pedidos` (
     `id` INT AUTO_INCREMENT COMMENT 'Clave primaria del detalle',
     `id_pedido` INT NOT NULL COMMENT 'Relación con la cabecera de la orden',
@@ -112,7 +104,3 @@ CREATE TABLE `detalle_pedidos` (
 -- Índices adicionales para optimizar joins de pedidos y agregaciones analíticas
 CREATE INDEX `idx_pedidos_restaurante_fecha` ON `pedidos` (`id_restaurante`, `creado_en` DESC);
 CREATE INDEX `idx_detalle_pedidos_platillo` ON `detalle_pedidos` (`id_platillo`);
-
--- =============================================================================
--- INSERCIÓN Y ACTUALIZACIONES DE PRUEBA (REMOVIDOS PARA PRODUCCIÓN)
--- =============================================================================
