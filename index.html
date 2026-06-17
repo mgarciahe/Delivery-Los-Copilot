@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Los Copilots - Delivery Premium</title>
+  <meta name="description" content="Plataforma de delivery premium con comparador de precios en tiempo real, rastreo en vivo y los mejores menús a tu disposición.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand" id="btn-home">
+        <div class="logo-icon">
+          <i class="fa-solid fa-rocket"></i>
+        </div>
+        <span class="brand-name">Los <span class="highlight">Copilots</span></span>
+      </div>
+
+      <div class="delivery-location">
+        <i class="fa-solid fa-location-dot loc-icon"></i>
+        <div class="location-details">
+          <span class="loc-title">Entregar en</span>
+          <select id="select-address" class="loc-select">
+            <option value="home">Mi Casa (Calle Principal #123)</option>
+            <option value="office">Oficina (Av. Central #456)</option>
+            <option value="univ">Universidad (Campus Norte)</option>
+            <option value="new">+ Agregar nueva dirección...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="user-status-wrapper">
+        <div id="user-anonymous" class="user-actions">
+          <button class="btn btn-outline" id="btn-show-login"><i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión</button>
+          <button class="btn btn-primary" id="btn-show-register"><i class="fa-solid fa-user-plus"></i> Registrarse</button>
+        </div>
+        <div id="user-logged" class="user-profile hidden">
+          <div class="user-avatar" id="user-avatar-trigger">
+            <span class="avatar-initials" id="profile-initials">M</span>
+            <div class="status-indicator"></div>
+          </div>
+          <div class="profile-dropdown hidden" id="profile-dropdown">
+            <div class="dropdown-header">
+              <span class="user-fullname" id="profile-fullname">Miguel García</span>
+              <span class="user-email" id="profile-email">miguel@example.com</span>
+            </div>
+            <hr>
+            <button class="dropdown-item" id="btn-go-history"><i class="fa-solid fa-clock-rotate-left"></i> Mis Pedidos</button>
+            <button class="dropdown-item danger" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div id="notification" class="toast hidden">
+    <div class="toast-content">
+      <i class="fa-solid fa-circle-check toast-icon"></i>
+      <span id="toast-message">Mensaje de notificación</span>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="main-content">
+
+    <!-- VIEW: Auth Screen (Login / Register) -->
+    <section id="view-auth" class="auth-section hidden">
+      <div class="auth-card">
+        <!-- Auth Tabs -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login">Iniciar Sesión</button>
+          <button class="auth-tab" id="tab-register">Crear Cuenta</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="form-login" class="auth-form">
+          <h2 class="auth-title">Bienvenido de vuelta 🍕</h2>
+          <p class="auth-subtitle">Accede para comparar menús y ordenar en segundos.</p>
+          
+          <div class="form-group">
+            <label for="login-email">Correo Electrónico</label>
+            <div class="input-wrapper">
+              <i class="fa-regular fa-envelope input-icon"></i>
+              <input type="email" id="login-email" required placeholder="correo@ejemplo.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="form-register" class="auth-form hidden">
+          <h2 class="auth-title">Únete a Los Copilots 🚀</h2>
+          <p class="auth-subtitle">Regístrate y encuentra la opción más económica de inmediato.</p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="register-name">Nombre</label>
+              <div class="input-wrapper">
+                <i class="fa-regular fa-user input-icon"></i>
+                <input type="text" id="register-name" required placeholder="Ej. Miguel">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="register-lastname">Apellido</label>
+              <div class="input-wrapper">
+                <i class="fa-regular fa-user input-icon"></i>
+                <input type="text" id="register-lastname" required placeholder="Ej. García">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-email">Correo Electrónico</label>
+            <div class="input-wrapper">
+              <i class="fa-regular fa-envelope input-icon"></i>
+              <input type="email" id="register-email" required placeholder="miguel@ejemplo.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-password">Contraseña</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="register-password" required placeholder="Mínimo 6 caracteres">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Crear Cuenta</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW: Dashboard / Menus Explorer -->
+    <section id="view-dashboard" class="dashboard-section">
+      <!-- Hero Promo Banner -->
+      <div class="hero-banner">
+        <div class="hero-content">
+          <span class="hero-badge"><i class="fa-solid fa-fire"></i> Envío Gratis en tu primer pedido</span>
+          <h1>¿Qué se te antoja hoy?</h1>
+          <p>Compara menús en tiempo real y encuentra el precio más accesible con nuestro semáforo inteligente.</p>
+          
+          <!-- Search Bar and Fast Actions -->
+          <div class="search-container">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="search-menus" placeholder="Busca pizza, hamburguesas, sushi o tu proveedor favorito...">
+              <button class="btn btn-primary" id="btn-search-trigger">Buscar</button>
+            </div>
+          </div>
+        </div>
+        <div class="hero-image">
+          <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" alt="Platillos Deliciosos">
+        </div>
+      </div>
+
+      <!-- Controls (Filters, Sorting, Price Guide) -->
+      <div class="controls-panel">
+        <div class="price-legend">
+          <span class="legend-title">Semáforo de Precios:</span>
+          <div class="legend-items">
+            <span class="legend-tag budget"><span class="color-dot"></span> Económico (< Q8.00)</span>
+            <span class="legend-tag moderate"><span class="color-dot"></span> Moderado (Q8.00 - Q14.99)</span>
+            <span class="legend-tag expensive"><span class="color-dot"></span> Premium (≥ Q15.00)</span>
+          </div>
+        </div>
+
+        <div class="filters-wrapper">
+          <div class="filter-group">
+            <button class="filter-pill active" data-category="all">Todos</button>
+            <button class="filter-pill" data-category="hamburguesa"><i class="fa-solid fa-hamburger"></i> Hamburguesas</button>
+            <button class="filter-pill" data-category="pizza"><i class="fa-solid fa-pizza-slice"></i> Pizza</button>
+            <button class="filter-pill" data-category="sushi"><i class="fa-solid fa-fish"></i> Sushi/Asiático</button>
+            <button class="filter-pill" data-category="postre"><i class="fa-solid fa-ice-cream"></i> Postres</button>
+          </div>
+
+          <div class="sort-wrapper">
+            <i class="fa-solid fa-arrow-down-wide-short sort-icon"></i>
+            <select id="sort-menus" class="sort-select">
+              <option value="relevant">Más Relevantes</option>
+              <option value="price-asc">Precio: Menor a Mayor</option>
+              <option value="price-desc">Precio: Mayor a Menor</option>
+              <option value="time-asc">Entrega: Más rápida</option>
+              <option value="rating-desc">Mejor Calificados</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menus Grid -->
+      <div class="section-header">
+        <h2 class="section-title">Menús Disponibles</h2>
+        <span class="results-count" id="results-count">Mostrando 8 menús</span>
+      </div>
+      
+      <div class="menus-grid" id="menus-grid">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+    </section>
+
+    <!-- VIEW: Live Order Tracker -->
+    <section id="view-tracker" class="tracker-section hidden">
+      <div class="tracker-container">
+        
+        <!-- Live Map and Header -->
+        <div class="tracker-header-box">
+          <button class="btn btn-text" id="btn-back-dashboard"><i class="fa-solid fa-arrow-left"></i> Volver a Explorar</button>
+          <div class="tracker-title-row">
+            <div>
+              <h2>¡Tu pedido está en camino! 🚀</h2>
+              <p>Código del Pedido: <strong id="track-order-id">#COP-84920</strong></p>
+            </div>
+            <div class="eta-box">
+              <span class="eta-label">Tiempo Estimado</span>
+              <span class="eta-time" id="track-eta">20 - 30 min</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tracker-layout">
+          <!-- Tracker Info Column -->
+          <div class="tracker-info-panel">
+            <!-- Progress Stepper -->
+            <div class="stepper">
+              <div class="step active" id="step-1">
+                <div class="step-icon-wrapper">
+                  <div class="step-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                </div>
+                <div class="step-details">
+                  <h4>Pedido Confirmado</h4>
+                  <p>Hemos recibido tu orden y pago correctamente.</p>
+                </div>
+              </div>
+              <div class="step active" id="step-2">
+                <div class="step-icon-wrapper">
+                  <div class="step-icon"><i class="fa-solid fa-kitchen-set"></i></div>
+                </div>
+                <div class="step-details">
+                  <h4>Preparando tu comida</h4>
+                  <p>El restaurante está cocinando tus productos.</p>
+                </div>
+              </div>
+              <div class="step active" id="step-3">
+                <div class="step-icon-wrapper">
+                  <div class="step-icon"><i class="fa-solid fa-motorcycle"></i></div>
+                </div>
+                <div class="step-details">
+                  <h4>En camino</h4>
+                  <p>El repartidor asignado lleva tu pedido.</p>
+                </div>
+              </div>
+              <div class="step" id="step-4">
+                <div class="step-icon-wrapper">
+                  <div class="step-icon"><i class="fa-solid fa-house-chimney-user"></i></div>
+                </div>
+                <div class="step-details">
+                  <h4>¡Entregado!</h4>
+                  <p>¡Buen provecho! Tu comida ha llegado.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Driver & Merchant Details -->
+            <div class="delivery-details-card">
+              <h3>Datos de Entrega</h3>
+              
+              <!-- Driver profile -->
+              <div class="profile-card">
+                <div class="profile-photo">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Repartidor" id="driver-avatar">
+                </div>
+                <div class="profile-info">
+                  <span class="profile-role">Tu repartidor</span>
+                  <h4 id="driver-name">Carlos Gómez</h4>
+                  <div class="rating-badge">
+                    <i class="fa-solid fa-star"></i>
+                    <span id="driver-rating">4.9</span>
+                  </div>
+                </div>
+                <div class="profile-action">
+                  <a href="tel:#" class="btn-circle"><i class="fa-solid fa-phone"></i></a>
+                  <a href="#" class="btn-circle"><i class="fa-solid fa-message"></i></a>
+                </div>
+              </div>
+
+              <!-- Merchant details -->
+              <div class="merchant-mini-info">
+                <div class="merchant-icon">
+                  <i class="fa-solid fa-store"></i>
+                </div>
+                <div class="merchant-text">
+                  <span class="text-muted">Comercio</span>
+                  <h4 id="track-merchant-name">Burgers Premium Copilot</h4>
+                  <p id="track-merchant-address"><i class="fa-solid fa-location-dot"></i> Av. Reforma 10-25, Zona 10</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Route Simulation Map -->
+          <div class="tracker-map-panel">
+            <div class="simulated-map" id="simulated-map">
+              <!-- Animated Route Line SVG -->
+              <svg class="map-svg-overlay" viewBox="0 0 500 400">
+                <!-- Route Path -->
+                <path d="M 100 300 Q 250 200 400 100" fill="transparent" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round" />
+                <path id="route-progress-line" d="M 100 300 Q 250 200 400 100" fill="transparent" stroke="var(--primary)" stroke-width="6" stroke-linecap="round" stroke-dasharray="400" stroke-dashoffset="400" />
+                
+                <!-- Store Marker -->
+                <g class="map-marker store-marker" transform="translate(100, 300)">
+                  <circle cx="0" cy="0" r="14" fill="var(--danger)" />
+                  <i class="fa-solid fa-store marker-icon"></i>
+                  <text x="-30" y="32" class="marker-label">Restaurante</text>
+                </g>
+
+                <!-- User Home Marker -->
+                <g class="map-marker home-marker" transform="translate(400, 100)">
+                  <circle cx="0" cy="0" r="14" fill="var(--success)" />
+                  <i class="fa-solid fa-house marker-icon"></i>
+                  <text x="-15" y="32" class="marker-label">Tú</text>
+                </g>
+
+                <!-- Driver Moving Bike G -->
+                <g id="map-driver-bike" class="map-marker bike-marker" transform="translate(100, 300)">
+                  <circle cx="0" cy="0" r="18" fill="var(--primary)" class="pulse-ring" />
+                  <circle cx="0" cy="0" r="14" fill="var(--primary)" />
+                  <i class="fa-solid fa-motorcycle marker-icon"></i>
+                </g>
+              </svg>
+              <div class="map-background-grid"></div>
+              <div class="map-legend">Mapa de Entrega (Simulado)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- PRODUCT DETAIL MODAL -->
+  <div id="product-modal" class="modal hidden">
+    <div class="modal-overlay" id="modal-close-overlay"></div>
+    <div class="modal-card">
+      <button class="modal-close-btn" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+      
+      <div class="modal-grid">
+        <!-- Image Area -->
+        <div class="modal-image-panel">
+          <img src="" alt="Comida" id="modal-food-img">
+          <div class="modal-discount-tag hidden" id="modal-discount-badge">20% OFF</div>
+        </div>
+
+        <!-- Description and Provider Info -->
+        <div class="modal-info-panel">
+          <div class="modal-header-info">
+            <h2 id="modal-food-name">Hamburguesa Clásica</h2>
+            <div class="price-row">
+              <span class="modal-price" id="modal-price">Q8.50</span>
+              <span class="modal-price-old hidden" id="modal-price-old">Q10.50</span>
+            </div>
+            <p class="modal-description" id="modal-description">Exquisito medallón de carne de res premium al grill, lechuga, tomate fresco, cebolla caramelizada, queso cheddar derretido y salsa secreta de la casa en pan de papa brioche.</p>
+          </div>
+
+          <div class="provider-info-card">
+            <h3>Proveedor</h3>
+            <div class="provider-header">
+              <div class="provider-logo">
+                <i class="fa-solid fa-utensils"></i>
+              </div>
+              <div class="provider-details-text">
+                <h4 id="modal-provider-name">Burgers Premium Copilot</h4>
+                <div class="provider-rating">
+                  <div class="stars" id="modal-provider-stars">
+                    <!-- Dynamic Stars -->
+                  </div>
+                  <span class="rating-num" id="modal-provider-rating-score">4.7</span>
+                  <span class="reviews-count" id="modal-provider-reviews-count">(124 reseñas)</span>
+                </div>
+              </div>
+            </div>
+            <div class="provider-address">
+              <i class="fa-solid fa-location-dot"></i>
+              <span id="modal-provider-address">Av. Reforma 10-25, Zona 10</span>
+            </div>
+            
+            <!-- Provider mini-reviews list -->
+            <div class="provider-reviews-section">
+              <h5>Reseñas destacadas</h5>
+              <div class="reviews-list" id="modal-reviews-list">
+                <!-- Dynamic Reviews -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkout actions inside modal -->
+          <div class="modal-actions">
+            <div class="quantity-selector">
+              <button class="qty-btn" id="qty-minus"><i class="fa-solid fa-minus"></i></button>
+              <span class="qty-num" id="qty-count">1</span>
+              <button class="qty-btn" id="qty-plus"><i class="fa-solid fa-plus"></i></button>
+            </div>
+            <button class="btn btn-primary btn-lg grow" id="btn-place-order">
+              <i class="fa-solid fa-cart-shopping"></i> Confirmar Pedido (<span id="modal-total-price">Q8.50</span>)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>&copy; 2026 Los Copilots Delivery. Desarrollado en conjunto por el Equipo de Programación.</p>
+    </div>
+  </footer>
+
+  <!-- App Javascript -->
+  <script src="app.js"></script>
+</body>
+</html>
