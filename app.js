@@ -255,7 +255,7 @@ const DRIVERS_DATA = [
 // Global Image Fallback Handler for missing/broken Unsplash images
 function handleImageError(imgElement, category) {
   imgElement.onerror = null; // Prevent infinite loop
-  
+
   // High quality alternative food images
   const fallbacks = {
     hamburguesa: "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80",
@@ -263,7 +263,7 @@ function handleImageError(imgElement, category) {
     sushi: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=500&q=80",
     postre: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=500&q=80"
   };
-  
+
   // Safe SVG base64 placeholders that will always work even without network
   const svgPlaceholders = {
     hamburguesa: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" style="background:%23ffe5d9;"><text x="50%" y="55%" font-size="40" text-anchor="middle">🍔</text></svg>`,
@@ -271,9 +271,9 @@ function handleImageError(imgElement, category) {
     sushi: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" style="background:%23ffe5d9;"><text x="50%" y="55%" font-size="40" text-anchor="middle">🍣</text></svg>`,
     postre: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" style="background:%23ffe5d9;"><text x="50%" y="55%" font-size="40" text-anchor="middle">🍰</text></svg>`
   };
-  
+
   imgElement.src = fallbacks[category] || fallbacks['hamburguesa'];
-  
+
   // Fallback to pure local SVG data URL if the fallback image also fails
   imgElement.onerror = () => {
     imgElement.src = svgPlaceholders[category] || svgPlaceholders['hamburguesa'];
@@ -317,7 +317,7 @@ function setupEventListeners() {
   // Navigation elements
   document.getElementById("btn-home").addEventListener("click", () => showView("dashboard"));
   document.getElementById("btn-back-dashboard").addEventListener("click", () => showView("dashboard"));
-  
+
   // Auth view trigger buttons
   document.getElementById("btn-show-login").addEventListener("click", () => {
     showView("auth");
@@ -333,7 +333,7 @@ function setupEventListeners() {
     e.stopPropagation();
     document.getElementById("profile-dropdown").classList.toggle("hidden");
   });
-  
+
   // Close dropdown on click outside
   document.addEventListener("click", () => {
     document.getElementById("profile-dropdown").classList.add("hidden");
@@ -341,7 +341,7 @@ function setupEventListeners() {
 
   // Logout
   document.getElementById("btn-logout").addEventListener("click", handleLogout);
-  
+
   // Auth Form tabs
   document.getElementById("tab-login").addEventListener("click", () => switchAuthTab("login"));
   document.getElementById("tab-register").addEventListener("click", () => switchAuthTab("register"));
@@ -371,14 +371,14 @@ function setupEventListeners() {
         selectAddressEl.value = Object.keys(addresses)[0];
         return;
       }
-      
+
       const newKey = "custom_" + Date.now();
       addresses[newKey] = `${newAddressName} (${newAddressDetail})`;
-      
+
       const newOption = document.createElement("option");
       newOption.value = newKey;
       newOption.textContent = addresses[newKey];
-      
+
       selectAddressEl.insertBefore(newOption, selectAddressEl.lastElementChild);
       selectAddressEl.value = newKey;
       showToast(`Nueva dirección agregada: ${addresses[newKey]}`);
@@ -393,7 +393,7 @@ function setupEventListeners() {
     searchQuery = e.target.value.trim();
     renderMenus();
   });
-  
+
   document.getElementById("btn-search-trigger").addEventListener("click", () => {
     searchQuery = searchInput.value.trim();
     renderMenus();
@@ -419,12 +419,12 @@ function setupEventListeners() {
   // Product Modal Action buttons
   document.getElementById("btn-close-modal").addEventListener("click", closeModal);
   document.getElementById("modal-close-overlay").addEventListener("click", closeModal);
-  
+
   document.getElementById("qty-minus").addEventListener("click", () => updateQuantity(-1));
   document.getElementById("qty-plus").addEventListener("click", () => updateQuantity(1));
-  
+
   document.getElementById("btn-place-order").addEventListener("click", placeOrder);
-  
+
   // Profile history click simulation
   document.getElementById("btn-go-history").addEventListener("click", () => {
     if (activeOrder) {
@@ -459,7 +459,7 @@ function switchAuthTab(tab) {
 
 function handleRegisterSubmit(e) {
   e.preventDefault();
-  
+
   const name = document.getElementById("register-name").value.trim();
   const lastname = document.getElementById("register-lastname").value.trim();
   const email = document.getElementById("register-email").value.trim();
@@ -473,10 +473,10 @@ function handleRegisterSubmit(e) {
   // Create mock user
   currentUser = { name, lastname, email };
   localStorage.setItem("copilots_user", JSON.stringify(currentUser));
-  
+
   showToast(`¡Cuenta creada con éxito! Bienvenido, ${name}`);
   updateHeaderUI();
-  
+
   // Clear forms and show dashboard
   e.target.reset();
   showView("dashboard");
@@ -507,7 +507,7 @@ function handleLoginSubmit(e) {
 
   showToast(`¡Bienvenido de vuelta, ${name}!`);
   updateHeaderUI();
-  
+
   e.target.reset();
   showView("dashboard");
 }
@@ -523,15 +523,15 @@ function handleLogout() {
 function updateHeaderUI() {
   const anonSection = document.getElementById("user-anonymous");
   const loggedSection = document.getElementById("user-logged");
-  
+
   if (currentUser) {
     anonSection.classList.add("hidden");
     loggedSection.classList.remove("hidden");
-    
+
     // Set profile names
     document.getElementById("profile-fullname").textContent = `${currentUser.name} ${currentUser.lastname}`;
     document.getElementById("profile-email").textContent = currentUser.email;
-    
+
     // Set initials badge
     const initials = (currentUser.name.charAt(0) + currentUser.lastname.charAt(0)).toUpperCase();
     document.getElementById("profile-initials").textContent = initials;
@@ -571,8 +571,8 @@ function renderMenus() {
   // 1. Filter data
   let filtered = MENUS_DATA.filter(item => {
     const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.provider.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.provider.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -605,7 +605,7 @@ function renderMenus() {
   filtered.forEach(menu => {
     const semaphoreClass = getPriceSemaphoreClass(menu.price);
     const semaphoreText = getPriceSemaphoreText(menu.price);
-    
+
     const card = document.createElement("div");
     card.className = "menu-card";
     card.innerHTML = `
@@ -657,11 +657,11 @@ function openProductModal(menu) {
   // Populate basic food info
   const modalImg = document.getElementById("modal-food-img");
   modalImg.src = menu.image;
-  modalImg.onerror = function() { handleImageError(this, menu.category); };
+  modalImg.onerror = function () { handleImageError(this, menu.category); };
   document.getElementById("modal-food-name").textContent = menu.name;
   document.getElementById("modal-description").textContent = menu.description;
   document.getElementById("modal-price").textContent = `Q${menu.price.toFixed(2)}`;
-  
+
   const discountBadge = document.getElementById("modal-discount-badge");
   const oldPrice = document.getElementById("modal-price-old");
   if (menu.discount) {
@@ -760,10 +760,10 @@ function placeOrder() {
 
   closeModal();
   showToast("¡Pedido recibido! Redirigiendo al rastreo en vivo...");
-  
+
   // Transition to Tracker
   showView("tracker");
-  
+
   // Setup tracker UI
   document.getElementById("track-order-id").textContent = activeOrder.orderId;
   document.getElementById("track-merchant-name").textContent = activeOrder.merchantName;
@@ -791,7 +791,7 @@ function startTrackerSimulation() {
   // Reset SVG elements & Bike position
   const progressLine = document.getElementById("route-progress-line");
   const bike = document.getElementById("map-driver-bike");
-  
+
   progressLine.style.strokeDashoffset = "400";
   bike.setAttribute("transform", "translate(100, 300)");
 
@@ -806,7 +806,7 @@ function startTrackerSimulation() {
 
   orderSimulationInterval = setInterval(() => {
     progressPercent += 2; // Incremental progress (simulating journey)
-    
+
     // Update SVG Line dashoffset (moving forward)
     const offset = 400 - (400 * (progressPercent / 100));
     progressLine.style.strokeDashoffset = offset;
@@ -858,7 +858,7 @@ function showView(viewName) {
 
   // Always scroll to top on view changes
   window.scrollTo(0, 0);
-  
+
   // Stop simulation if going back to dashboard and completed
   if (viewName !== "tracker" && orderSimulationInterval && progressFinished()) {
     clearInterval(orderSimulationInterval);
@@ -876,7 +876,7 @@ function showToast(message, isError = false) {
   const toastIcon = toast.querySelector(".toast-icon");
 
   toastMsg.textContent = message;
-  
+
   if (isError) {
     toastIcon.className = "fa-solid fa-circle-exclamation toast-icon";
     toastIcon.style.color = "var(--danger)";

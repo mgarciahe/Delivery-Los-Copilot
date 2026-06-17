@@ -1,19 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Los Copilots - Delivery Premium</title>
-  <meta name="description" content="Plataforma de delivery premium con comparador de precios en tiempo real, rastreo en vivo y los mejores menús a tu disposición.">
+  <meta name="description"
+    content="Plataforma de delivery premium con comparador de precios en tiempo real, rastreo en vivo y los mejores menús a tu disposición.">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Custom Styling -->
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <!-- Top Navigation Bar -->
@@ -41,8 +46,10 @@
 
       <div class="user-status-wrapper">
         <div id="user-anonymous" class="user-actions">
-          <button class="btn btn-outline" id="btn-show-login"><i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión</button>
-          <button class="btn btn-primary" id="btn-show-register"><i class="fa-solid fa-user-plus"></i> Registrarse</button>
+          <button class="btn btn-outline" id="btn-show-login"><i class="fa-solid fa-right-to-bracket"></i> Iniciar
+            Sesión</button>
+          <button class="btn btn-primary" id="btn-show-register"><i class="fa-solid fa-user-plus"></i>
+            Registrarse</button>
         </div>
         <div id="user-logged" class="user-profile hidden">
           <div class="user-avatar" id="user-avatar-trigger">
@@ -55,8 +62,10 @@
               <span class="user-email" id="profile-email">miguel@example.com</span>
             </div>
             <hr>
-            <button class="dropdown-item" id="btn-go-history"><i class="fa-solid fa-clock-rotate-left"></i> Mis Pedidos</button>
-            <button class="dropdown-item danger" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+            <button class="dropdown-item" id="btn-go-history"><i class="fa-solid fa-clock-rotate-left"></i> Mis
+              Pedidos</button>
+            <button class="dropdown-item danger" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar
+              Sesión</button>
           </div>
         </div>
       </div>
@@ -87,7 +96,7 @@
         <form id="form-login" class="auth-form">
           <h2 class="auth-title">Bienvenido de vuelta 🍕</h2>
           <p class="auth-subtitle">Accede para comparar menús y ordenar en segundos.</p>
-          
+
           <div class="form-group">
             <label for="login-email">Correo Electrónico</label>
             <div class="input-wrapper">
@@ -158,18 +167,20 @@
           <span class="hero-badge"><i class="fa-solid fa-fire"></i> Envío Gratis en tu primer pedido</span>
           <h1>¿Qué se te antoja hoy?</h1>
           <p>Compara menús en tiempo real y encuentra el precio más accesible con nuestro semáforo inteligente.</p>
-          
+
           <!-- Search Bar and Fast Actions -->
           <div class="search-container">
             <div class="search-box">
               <i class="fa-solid fa-magnifying-glass search-icon"></i>
-              <input type="text" id="search-menus" placeholder="Busca pizza, hamburguesas, sushi o tu proveedor favorito...">
+              <input type="text" id="search-menus"
+                placeholder="Busca pizza, hamburguesas, sushi o tu proveedor favorito...">
               <button class="btn btn-primary" id="btn-search-trigger">Buscar</button>
             </div>
           </div>
         </div>
         <div class="hero-image">
-          <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" alt="Platillos Deliciosos">
+          <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80"
+            alt="Platillos Deliciosos">
         </div>
       </div>
 
@@ -179,15 +190,16 @@
           <span class="legend-title">Semáforo de Precios:</span>
           <div class="legend-items">
             <span class="legend-tag budget"><span class="color-dot"></span> Económico (< Q8.00)</span>
-            <span class="legend-tag moderate"><span class="color-dot"></span> Moderado (Q8.00 - Q14.99)</span>
-            <span class="legend-tag expensive"><span class="color-dot"></span> Premium (≥ Q15.00)</span>
+                <span class="legend-tag moderate"><span class="color-dot"></span> Moderado (Q8.00 - Q14.99)</span>
+                <span class="legend-tag expensive"><span class="color-dot"></span> Premium (≥ Q15.00)</span>
           </div>
         </div>
 
         <div class="filters-wrapper">
           <div class="filter-group">
             <button class="filter-pill active" data-category="all">Todos</button>
-            <button class="filter-pill" data-category="hamburguesa"><i class="fa-solid fa-hamburger"></i> Hamburguesas</button>
+            <button class="filter-pill" data-category="hamburguesa"><i class="fa-solid fa-hamburger"></i>
+              Hamburguesas</button>
             <button class="filter-pill" data-category="pizza"><i class="fa-solid fa-pizza-slice"></i> Pizza</button>
             <button class="filter-pill" data-category="sushi"><i class="fa-solid fa-fish"></i> Sushi/Asiático</button>
             <button class="filter-pill" data-category="postre"><i class="fa-solid fa-ice-cream"></i> Postres</button>
@@ -211,7 +223,7 @@
         <h2 class="section-title">Menús Disponibles</h2>
         <span class="results-count" id="results-count">Mostrando 8 menús</span>
       </div>
-      
+
       <div class="menus-grid" id="menus-grid">
         <!-- Rendered dynamically by JavaScript -->
       </div>
@@ -220,10 +232,11 @@
     <!-- VIEW: Live Order Tracker -->
     <section id="view-tracker" class="tracker-section hidden">
       <div class="tracker-container">
-        
+
         <!-- Live Map and Header -->
         <div class="tracker-header-box">
-          <button class="btn btn-text" id="btn-back-dashboard"><i class="fa-solid fa-arrow-left"></i> Volver a Explorar</button>
+          <button class="btn btn-text" id="btn-back-dashboard"><i class="fa-solid fa-arrow-left"></i> Volver a
+            Explorar</button>
           <div class="tracker-title-row">
             <div>
               <h2>¡Tu pedido está en camino! 🚀</h2>
@@ -282,11 +295,13 @@
             <!-- Driver & Merchant Details -->
             <div class="delivery-details-card">
               <h3>Datos de Entrega</h3>
-              
+
               <!-- Driver profile -->
               <div class="profile-card">
                 <div class="profile-photo">
-                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Repartidor" id="driver-avatar">
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+                    alt="Repartidor" id="driver-avatar">
                 </div>
                 <div class="profile-info">
                   <span class="profile-role">Tu repartidor</span>
@@ -322,9 +337,12 @@
               <!-- Animated Route Line SVG -->
               <svg class="map-svg-overlay" viewBox="0 0 500 400">
                 <!-- Route Path -->
-                <path d="M 100 300 Q 250 200 400 100" fill="transparent" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round" />
-                <path id="route-progress-line" d="M 100 300 Q 250 200 400 100" fill="transparent" stroke="var(--primary)" stroke-width="6" stroke-linecap="round" stroke-dasharray="400" stroke-dashoffset="400" />
-                
+                <path d="M 100 300 Q 250 200 400 100" fill="transparent" stroke="#e2e8f0" stroke-width="6"
+                  stroke-linecap="round" />
+                <path id="route-progress-line" d="M 100 300 Q 250 200 400 100" fill="transparent"
+                  stroke="var(--primary)" stroke-width="6" stroke-linecap="round" stroke-dasharray="400"
+                  stroke-dashoffset="400" />
+
                 <!-- Store Marker -->
                 <g class="map-marker store-marker" transform="translate(100, 300)">
                   <circle cx="0" cy="0" r="14" fill="var(--danger)" />
@@ -361,7 +379,7 @@
     <div class="modal-overlay" id="modal-close-overlay"></div>
     <div class="modal-card">
       <button class="modal-close-btn" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
-      
+
       <div class="modal-grid">
         <!-- Image Area -->
         <div class="modal-image-panel">
@@ -377,7 +395,9 @@
               <span class="modal-price" id="modal-price">Q8.50</span>
               <span class="modal-price-old hidden" id="modal-price-old">Q10.50</span>
             </div>
-            <p class="modal-description" id="modal-description">Exquisito medallón de carne de res premium al grill, lechuga, tomate fresco, cebolla caramelizada, queso cheddar derretido y salsa secreta de la casa en pan de papa brioche.</p>
+            <p class="modal-description" id="modal-description">Exquisito medallón de carne de res premium al grill,
+              lechuga, tomate fresco, cebolla caramelizada, queso cheddar derretido y salsa secreta de la casa en pan de
+              papa brioche.</p>
           </div>
 
           <div class="provider-info-card">
@@ -401,7 +421,7 @@
               <i class="fa-solid fa-location-dot"></i>
               <span id="modal-provider-address">Av. Reforma 10-25, Zona 10</span>
             </div>
-            
+
             <!-- Provider mini-reviews list -->
             <div class="provider-reviews-section">
               <h5>Reseñas destacadas</h5>
@@ -436,4 +456,5 @@
   <!-- App Javascript -->
   <script src="app.js"></script>
 </body>
+
 </html>
