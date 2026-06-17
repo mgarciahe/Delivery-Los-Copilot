@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Los Copilot | Panel de Repartidor</title>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-logo">
+      <div class="logo-icon"><i class="fa-solid fa-motorcycle"></i></div>
+      <div class="logo-text">
+        <span class="brand-title">LOS COPILOT</span>
+        <span class="brand-subtitle">Delivery Driver</span>
+      </div>
+    </div>
+    
+    <div class="header-status">
+      <div id="badge-disponibilidad" class="status-badge status-offline">
+        <span class="status-dot"></span>
+        <span class="status-text">No Disponible</span>
+      </div>
+      <div id="badge-gps" class="status-badge status-gps-off">
+        <i class="fa-solid fa-location-dot"></i>
+        <span>GPS Inactivo</span>
+      </div>
+    </div>
+
+    <div class="driver-profile-mini" id="open-profile-btn">
+      <div class="profile-info">
+        <span class="profile-name" id="nav-driver-name">Repartidor</span>
+        <span class="profile-role">Moto - M-4589X</span>
+      </div>
+      <div class="profile-avatar">
+        <i class="fa-solid fa-user-ninja"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-container">
+    
+    <!-- Left Column: Controls & Stats -->
+    <section class="dashboard-sidebar">
+      
+      <!-- Quick Controls Card -->
+      <div class="glass-card controls-card">
+        <h3><i class="fa-solid fa-sliders"></i> Controles Rápidos</h3>
+        
+        <div class="control-item">
+          <div class="control-label">
+            <span class="control-title">Disponibilidad</span>
+            <span class="control-desc" id="dispo-desc">Apagado - No recibes ofertas</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-disponibilidad">
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <div class="control-item">
+          <div class="control-label">
+            <span class="control-title">Alertas de Pedido</span>
+            <span class="control-desc">Sonidos e indicaciones activas</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-alertas" checked>
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <div class="control-item">
+          <div class="control-label">
+            <span class="control-title">Activar GPS</span>
+            <span class="control-desc" id="gps-desc">Ubicación simulada desactivada</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-gps">
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="glass-card stat-card accent-green">
+          <div class="stat-icon"><i class="fa-solid fa-wallet"></i></div>
+          <div class="stat-value" id="stat-ganancias">$0.00</div>
+          <div class="stat-label">Ganancias Totales</div>
+        </div>
+
+        <div class="glass-card stat-card accent-orange">
+          <div class="stat-icon"><i class="fa-solid fa-award"></i></div>
+          <div class="stat-value" id="stat-puntos">0</div>
+          <div class="stat-label">Puntos Acumulados</div>
+        </div>
+
+        <div class="glass-card stat-card accent-blue">
+          <div class="stat-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+          <div class="stat-value" id="stat-pedidos">0</div>
+          <div class="stat-label">Entregas de Hoy</div>
+        </div>
+      </div>
+
+      <!-- Quick Profile Details Card -->
+      <div class="glass-card driver-card">
+        <div class="driver-card-header">
+          <h4>Vehículo y Licencia</h4>
+          <button class="btn btn-secondary btn-sm" id="edit-profile-trigger">
+            <i class="fa-solid fa-pen-to-square"></i> Editar
+          </button>
+        </div>
+        <div class="driver-detail">
+          <span class="detail-label">Moto:</span>
+          <span class="detail-val" id="card-moto-desc">Honda CB190R</span>
+        </div>
+        <div class="driver-detail">
+          <span class="detail-label">Placa:</span>
+          <span class="detail-val" id="card-moto-placa">M-4589X</span>
+        </div>
+        <div class="driver-detail">
+          <span class="detail-label">Color:</span>
+          <span class="detail-val" id="card-moto-color">Rojo</span>
+        </div>
+        <div class="driver-detail border-top">
+          <span class="detail-label">Licencia:</span>
+          <span class="detail-val" id="card-licencia-num">0102-150890-101-2</span>
+        </div>
+        <div class="driver-detail">
+          <span class="detail-label">Expira:</span>
+          <span class="detail-val" id="card-licencia-exp">2029-12-31</span>
+        </div>
+      </div>
+      
+    </section>
+
+    <!-- Center Column: Map & Active Order -->
+    <section class="dashboard-main">
+      
+      <!-- Leaflet Map Simulator -->
+      <div class="glass-card map-card">
+        <div class="map-overlay-info" id="map-instructions">
+          <i class="fa-solid fa-route"></i> Activa el GPS y tu disponibilidad para trazar la ruta de entrega.
+        </div>
+        <div id="map-container"></div>
+      </div>
+
+      <!-- Active Order Panel -->
+      <div class="glass-card active-order-card" id="active-order-panel">
+        <div class="active-order-placeholder" id="order-placeholder">
+          <div class="pulse-ring"></div>
+          <i class="fa-solid fa-circle-notch fa-spin status-search-icon"></i>
+          <h3 id="placeholder-title">Esperando Ofertas de Pedidos...</h3>
+          <p id="placeholder-subtitle">Activa tu disponibilidad para empezar a recibir entregas de proveedores en tiempo real.</p>
+          
+          <button class="btn btn-primary" id="btn-manual-sim" style="margin-top: 1.5rem; display: none;">
+            <i class="fa-solid fa-magic"></i> Simular Pedido Entrante
+          </button>
+        </div>
+
+        <div class="order-content hidden" id="order-details-content">
+          <div class="order-header-status">
+            <span class="order-badge"><i class="fa-solid fa-motorcycle"></i> Pedido Activo</span>
+            <span class="order-id" id="active-order-id">ORD-000</span>
+          </div>
+
+          <div class="order-grid-details">
+            <!-- Left Grid: Addresses & Items -->
+            <div class="order-route-items">
+              <div class="route-point">
+                <div class="point-icon pin-supplier"><i class="fa-solid fa-shop"></i></div>
+                <div class="point-details">
+                  <span class="point-title">Recoger en Proveedor:</span>
+                  <span class="point-name" id="order-supplier-name">Pizzería La Toscana</span>
+                  <span class="point-address" id="order-supplier-addr">Calle Real 4-12, Zona 10</span>
+                </div>
+              </div>
+
+              <div class="route-line-connector"></div>
+
+              <div class="route-point">
+                <div class="point-icon pin-client"><i class="fa-solid fa-house-user"></i></div>
+                <div class="point-details">
+                  <span class="point-title">Entregar a Cliente:</span>
+                  <span class="point-name" id="order-client-name">Carlos Mendoza</span>
+                  <span class="point-address" id="order-client-addr">Apartamento 4B, Edificio Las Pilas, Zona 4</span>
+                </div>
+              </div>
+
+              <div class="order-items-list-box">
+                <h5><i class="fa-solid fa-receipt"></i> Detalle del Pedido</h5>
+                <ul id="order-items-ul">
+                  <li>1x Pizza Familiar Margherita</li>
+                  <li>2x Refrescos de Lata</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Right Grid: Financials & Actions -->
+            <div class="order-financials">
+              <div class="financial-card">
+                <div class="fin-label">Pago a Recibir</div>
+                <div class="fin-val" id="order-payment">$0.00</div>
+              </div>
+
+              <div class="financial-card">
+                <div class="fin-label">Puntos a Ganar</div>
+                <div class="fin-val font-orange" id="order-points">+0 pts</div>
+              </div>
+
+              <div class="financial-card">
+                <div class="fin-label">Tiempo Est.</div>
+                <div class="fin-val" id="order-time">-- min</div>
+              </div>
+
+              <button class="btn btn-success btn-large btn-block" id="btn-complete-delivery">
+                <i class="fa-solid fa-circle-check"></i> Notificar Entrega Realizada
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Right Column: Offers & Log -->
+    <section class="dashboard-aside">
+      
+      <!-- Incoming Offers Alert Pool -->
+      <div class="glass-card offers-card">
+        <h3><i class="fa-solid fa-bell"></i> Alertas de Ofertas</h3>
+        <div id="offers-list-container" class="offers-list">
+          <div class="no-offers">
+            <i class="fa-solid fa-bell-slash"></i>
+            <p>No hay ofertas disponibles</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deliveries Log -->
+      <div class="glass-card history-card">
+        <h3><i class="fa-solid fa-history"></i> Historial de Entregas</h3>
+        <div class="history-list" id="history-list-container">
+          <!-- History entries will be injected here -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Edit Profile Modal Overlay -->
+  <div class="modal-overlay hidden" id="profile-modal">
+    <div class="glass-card modal-content">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-id-card"></i> Editar Datos de Repartidor</h2>
+        <button class="btn-close-modal" id="close-profile-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <form id="profile-form">
+        <div class="form-section-title">Datos Personales</div>
+        <div class="form-group">
+          <label for="form-nombre">Nombre Completo</label>
+          <input type="text" id="form-nombre" required placeholder="Ej. Juan Carlos Pérez">
+        </div>
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="form-correo">Correo Electrónico</label>
+            <input type="email" id="form-correo" required placeholder="ejemplo@correo.com">
+          </div>
+          <div class="form-group">
+            <label for="form-contrasenia">Contraseña (Módulo Login)</label>
+            <input type="password" id="form-contrasenia" required placeholder="Contraseña de acceso">
+          </div>
+        </div>
+
+        <div class="form-section-title">Información de la Motocicleta</div>
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="form-moto-marca">Marca</label>
+            <input type="text" id="form-moto-marca" required placeholder="Ej. Honda">
+          </div>
+          <div class="form-group">
+            <label for="form-moto-modelo">Modelo</label>
+            <input type="text" id="form-moto-modelo" required placeholder="Ej. CB190R">
+          </div>
+        </div>
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="form-moto-placa">Placa</label>
+            <input type="text" id="form-moto-placa" required placeholder="Ej. M-4589X">
+          </div>
+          <div class="form-group">
+            <label for="form-moto-color">Color</label>
+            <input type="text" id="form-moto-color" required placeholder="Ej. Rojo">
+          </div>
+        </div>
+
+        <div class="form-section-title">Datos de Licencia de Conducir</div>
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="form-licencia-num">Número de Licencia</label>
+            <input type="text" id="form-licencia-num" required placeholder="Ej. 0102-150890-101-2">
+          </div>
+          <div class="form-group">
+            <label for="form-licencia-exp">Fecha de Expiración</label>
+            <input type="date" id="form-licencia-exp" required>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <span class="form-note">* Estos datos persisten en la base de datos de repartidores y se dejan vinculables al login general.</span>
+          <button type="submit" class="btn btn-primary" id="btn-save-profile">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sound Alert elements -->
+  <audio id="audio-alert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-120.wav" preload="auto"></audio>
+  <audio id="audio-success" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-120.wav" preload="auto"></audio>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- App JS -->
+  <script src="app.js"></script>
+</body>
+</html>

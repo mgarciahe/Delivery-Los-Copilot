@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Delivery Los Copilot</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Hojas de Estilos -->
+    <link rel="stylesheet" href="dashboard_proveedor.css">
+</head>
+<body>
+    <!-- Fondo decorativo con luces dinámicas -->
+    <div class="bg-decorations">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <!-- Contenedor general del dashboard -->
+    <div class="dashboard-wrapper">
+        
+        <!-- Barra Lateral de Navegación -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-motorcycle logo-icon"></i>
+                <span>Los Copilot</span>
+            </div>
+            
+            <div class="provider-profile">
+                <div class="profile-avatar">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <div class="profile-info">
+                    <h3 id="provider-name">Cargando...</h3>
+                    <span class="status-badge"><span class="pulse-dot"></span>Online</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <button class="nav-btn active" data-section="menu-section" onclick="showSection('menu-section')">
+                            <i class="fa-solid fa-utensils"></i>
+                            <span>Gestionar Menú</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-btn" data-section="orders-section" onclick="showSection('orders-section')">
+                            <i class="fa-solid fa-receipt"></i>
+                            <span>Pedidos Recibidos</span>
+                            <span class="badge hide" id="orders-badge">0</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-btn" data-section="payments-section" onclick="showSection('payments-section')">
+                            <i class="fa-solid fa-credit-card"></i>
+                            <span>Métodos de Pago</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="nav-btn" data-section="analytics-section" onclick="showSection('analytics-section')">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>Analíticas</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="handleLogout()">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Área Principal de Contenido -->
+        <main class="main-content">
+            <!-- Header Superior -->
+            <header class="content-header">
+                <div class="header-title">
+                    <span class="header-pre">Panel de Control</span>
+                    <h2 id="current-section-title">Gestionar Menú</h2>
+                </div>
+                <div class="header-actions">
+                    <div class="header-date" id="header-date-box">
+                        <i class="fa-regular fa-calendar-days"></i>
+                        <span id="live-date">Cargando fecha...</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Alertas Globales -->
+            <div id="dashboard-alert" class="alert-box hide">
+                <span id="dashboard-alert-msg"></span>
+            </div>
+
+            <!-- SECCIÓN: GESTIONAR MENÚ -->
+            <section id="menu-section" class="content-section">
+                <div class="section-actions-bar">
+                    <p class="section-desc">Agrega, edita y remueve platillos de tu menú visible para los clientes.</p>
+                    <button class="btn btn-primary" onclick="openModal('add')">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Agregar Platillo</span>
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Categoría</th>
+                                <th>Precio</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="platillos-tbody">
+                            <!-- Inyección dinámica -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: PEDIDOS RECIBIDOS -->
+            <section id="orders-section" class="content-section hide">
+                <div class="section-actions-bar">
+                    <p class="section-desc">Pedidos entrantes de tu restaurante. Cambia el estado para notificar al repartidor y al cliente.</p>
+                    <button class="btn btn-secondary" onclick="loadOrders()">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span>Actualizar</span>
+                    </button>
+                </div>
+
+                <div class="orders-grid" id="orders-container">
+                    <!-- Inyección dinámica de pedidos -->
+                </div>
+            </section>
+
+            <!-- SECCIÓN: MÉTODOS DE PAGO -->
+            <section id="payments-section" class="content-section hide">
+                <p class="section-desc">Activa o desactiva las pasarelas y formas de pago habilitadas para tus compradores.</p>
+                
+                <div class="payment-card-grid">
+                    <div class="payment-card">
+                        <div class="payment-header">
+                            <i class="fa-solid fa-money-bill-wave payment-icon green"></i>
+                            <div class="payment-meta">
+                                <h3>Pago en Efectivo</h3>
+                                <p>El cliente paga al recibir el delivery</p>
+                            </div>
+                        </div>
+                        <div class="payment-body">
+                            <label class="switch">
+                                <input type="checkbox" id="pay-cash" checked onchange="savePaymentSettings()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="payment-card">
+                        <div class="payment-header">
+                            <i class="fa-solid fa-credit-card payment-icon blue"></i>
+                            <div class="payment-meta">
+                                <h3>Tarjeta de Crédito / Débito</h3>
+                                <p>Visa, Mastercard y American Express</p>
+                            </div>
+                        </div>
+                        <div class="payment-body">
+                            <label class="switch">
+                                <input type="checkbox" id="pay-card" checked onchange="savePaymentSettings()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="payment-card">
+                        <div class="payment-header">
+                            <i class="fa-solid fa-building-columns payment-icon purple"></i>
+                            <div class="payment-meta">
+                                <h3>Transferencia Bancaria</h3>
+                                <p>Transferencia electrónica directa ACH</p>
+                            </div>
+                        </div>
+                        <div class="payment-body">
+                            <label class="switch">
+                                <input type="checkbox" id="pay-bank" onchange="savePaymentSettings()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-footer-alert">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Los cambios en los métodos de pago se aplican de forma inmediata en las pasarelas del cliente.</span>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: ANALÍTICAS -->
+            <section id="analytics-section" class="content-section hide">
+                <p class="section-desc">Estadísticas de facturación, volumen y rendimiento de los platillos más populares.</p>
+                
+                <!-- Tarjetas de Resumen Global -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon purple">
+                            <i class="fa-solid fa-dollar-sign"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Ingresos Totales</span>
+                            <h3 id="metric-revenue">$0.00</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon blue">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Pedidos Totales</span>
+                            <h3 id="metric-orders">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon green">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Pedidos Entregados</span>
+                            <h3 id="metric-completed">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon red">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Tasa de Cancelación</span>
+                            <h3 id="metric-canceled">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Top Menús -->
+                <div class="analytics-row">
+                    <div class="analytics-box">
+                        <div class="box-header">
+                            <h3><i class="fa-solid fa-fire text-pink" style="margin-right: 8px;"></i> Top Menús Más Comprados</h3>
+                            <span>Por unidades vendidas</span>
+                        </div>
+                        <div class="box-body">
+                            <ul class="top-items-list" id="top-menus-list">
+                                <!-- Inyección dinámica de ranking -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: AGREGAR / EDITAR PLATILLO -->
+    <div class="modal-backdrop hide" id="platillo-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title">Agregar Nuevo Platillo</h3>
+                <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="platillo-form" onsubmit="handlePlatilloSubmit(event)">
+                <input type="hidden" id="form-platillo-id">
+                
+                <div class="input-group">
+                    <label for="form-nombre">Nombre del Platillo</label>
+                    <input type="text" id="form-nombre" placeholder="Ej. Hamburguesa Triple Queso" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="form-desc">Descripción / Ingredientes</label>
+                    <textarea id="form-desc" placeholder="Ingredientes, acompañamiento y tamaño del plato..." rows="3"></textarea>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="form-precio">Precio de Venta ($)</label>
+                        <input type="number" step="0.01" id="form-precio" placeholder="5.99" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="form-categoria">Categoría</label>
+                        <select id="form-categoria" required>
+                            <option value="combos">Combos</option>
+                            <option value="antojos">Antojos</option>
+                            <option value="postres">Postres</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="form-disponible" checked>
+                        <span>Disponible para venta inmediata</span>
+                    </label>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit-btn">Guardar Platillo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Archivo JS de control e interactividad -->
+    <script src="dashboard_view.js"></script>
+</body>
+</html>
