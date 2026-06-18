@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS `detalle_pedidos`;
 DROP TABLE IF EXISTS `pedidos`;
 DROP TABLE IF EXISTS `platillos`;
 DROP TABLE IF EXISTS `restaurantes`;
+DROP TABLE IF EXISTS `repartidores`;
 
 -- =============================================================================
 -- TABLA: restaurantes (Estructura Original)
@@ -30,6 +31,32 @@ CREATE TABLE `restaurantes` (
     `tiempo_entrega_min` INT NOT NULL DEFAULT 0 COMMENT 'Tiempo estimado de entrega en minutos',
     `activo` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Estado del restaurante: 1 = Activo, 0 = Inactivo',
     `creado_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Fecha y hora de registro',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- TABLA: repartidores
+-- =============================================================================
+CREATE TABLE `repartidores` (
+    `id` INT AUTO_INCREMENT COMMENT 'Clave primaria autoincremental',
+    `nombre` VARCHAR(100) NOT NULL COMMENT 'Nombre completo del repartidor',
+    `correo` VARCHAR(100) UNIQUE NOT NULL COMMENT 'Correo de acceso',
+    `password` VARCHAR(255) NOT NULL COMMENT 'Contraseña encriptada con bcrypt',
+    `moto_marca` VARCHAR(50) NULL COMMENT 'Marca de la motocicleta',
+    `moto_modelo` VARCHAR(50) NULL COMMENT 'Modelo de la motocicleta',
+    `moto_placa` VARCHAR(20) NULL COMMENT 'Placa del vehículo',
+    `moto_color` VARCHAR(20) NULL COMMENT 'Color del vehículo',
+    `licencia_numero` VARCHAR(50) NULL COMMENT 'Número de licencia',
+    `licencia_expiracion` DATE NULL COMMENT 'Fecha de expiración de la licencia',
+    `disponible` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = Disponible, 0 = No disponible',
+    `alertas_activas` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1 = Sí, 0 = No',
+    `gps_activo` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = Sí, 0 = No',
+    `ganancias_acumuladas` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Ganancias acumuladas',
+    `puntos_acumulados` INT NOT NULL DEFAULT 0 COMMENT 'Puntos acumulados',
+    `pedidos_hoy` INT NOT NULL DEFAULT 0 COMMENT 'Pedidos entregados hoy',
+    `pedido_activo` TEXT NULL COMMENT 'JSON stringified del pedido activo',
+    `historial_entregas` TEXT NULL COMMENT 'JSON stringified del historial de entregas',
+    `creado_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Fecha de registro',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

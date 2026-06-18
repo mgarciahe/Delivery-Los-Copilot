@@ -1318,3 +1318,122 @@ input:checked + .slider:before {
   }
 }
 
+
+
+/* ==========================================================================
+   RIDER AUTHENTICATION CARD & VIEW STYLES
+   ========================================================================== */
+.rider-auth-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  padding: 40px 24px;
+}
+
+.rider-auth-card {
+  background: var(--bg-secondary);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  width: 100%;
+  max-width: 500px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  animation: fadeIn 0.4s ease;
+}
+
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-family-title);
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.auth-tab.active {
+  color: var(--accent-green);
+  border-bottom-color: var(--accent-green);
+  background: rgba(255, 255, 255, 0.04);
+  text-shadow: var(--glow-green);
+}
+
+.auth-form {
+  padding: 32px;
+}
+
+.auth-title {
+  font-family: var(--font-family-title);
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.auth-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-muted);
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  outline: none;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper input:focus {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(0, 255, 170, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}

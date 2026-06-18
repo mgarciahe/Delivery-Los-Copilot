@@ -21,12 +21,140 @@ const DEFAULT_ZOOM = 13;
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
-  loadDriverProfile();
   setupEventListeners();
-  
-  // Start polling if already available
-  startOrStopPolling();
+  checkAuth();
 });
+
+/* ==========================================================================
+   AUTHENTICATION CHECK & SWITCH STATE
+   ========================================================================== */
+function checkAuth() {
+  const token = localStorage.getItem('rider_token');
+  const viewAuth = document.getElementById('view-rider-auth');
+  const dashboard = document.querySelector('.dashboard-container');
+  const headerStatus = document.querySelector('.header-status');
+  const profileWrapper = document.querySelector('.header-profile-wrapper');
+
+  if (token) {
+    viewAuth.classList.add('hidden');
+    dashboard.classList.remove('hidden');
+    headerStatus.classList.remove('hidden');
+    profileWrapper.classList.remove('hidden');
+    loadDriverProfile();
+  } else {
+    viewAuth.classList.remove('hidden');
+    dashboard.classList.add('hidden');
+    headerStatus.classList.add('hidden');
+    profileWrapper.classList.add('hidden');
+    if (isPollingOffers) {
+      clearInterval(pollingInterval);
+      isPollingOffers = false;
+    }
+  }
+}
+
+function switchRiderAuthTab(tab) {
+  const tabLogin = document.getElementById("tab-rider-login");
+  const tabRegister = document.getElementById("tab-rider-register");
+  const formLogin = document.getElementById("form-rider-login");
+  const formRegister = document.getElementById("form-rider-register");
+
+  if (tab === "login") {
+    tabLogin.classList.add("active");
+    tabRegister.classList.remove("active");
+    formLogin.classList.remove("hidden");
+    formRegister.classList.add("hidden");
+  } else {
+    tabRegister.classList.add("active");
+    tabLogin.classList.remove("active");
+    formRegister.classList.remove("hidden");
+    formLogin.classList.add("hidden");
+  }
+}
+
+function handleRiderLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById("rider-login-email").value.trim();
+  const password = document.getElementById("rider-login-password").value;
+
+  fetch('/api/rider/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        localStorage.setItem('rider_token', data.token);
+        localStorage.setItem('rider_info', JSON.stringify(data.repartidor));
+        alert("¡Inicio de sesión exitoso!");
+        checkAuth();
+      } else {
+        alert(data.message || "Credenciales incorrectas.");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Error de conexión al iniciar sesión.");
+    });
+}
+
+function handleRiderRegister(e) {
+  e.preventDefault();
+  const nombre = document.getElementById("rider-reg-name").value.trim();
+  const correo = document.getElementById("rider-reg-email").value.trim();
+  const password = document.getElementById("rider-reg-password").value;
+  
+  const marca = document.getElementById("rider-reg-moto-marca").value.trim();
+  const modelo = document.getElementById("rider-reg-moto-modelo").value.trim();
+  const placa = document.getElementById("rider-reg-moto-placa").value.trim();
+  const color = document.getElementById("rider-reg-moto-color").value.trim();
+  
+  const lic_num = document.getElementById("rider-reg-licencia-num").value.trim();
+  const lic_exp = document.getElementById("rider-reg-licencia-exp").value;
+
+  const payload = {
+    nombre,
+    correo,
+    password,
+    motocicleta: { marca, modelo, placa, color },
+    licencia: { numero: lic_num, expiracion: lic_exp }
+  };
+
+  fetch('/api/rider/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("¡Registro exitoso! Por favor inicia sesión.");
+        switchRiderAuthTab("login");
+        document.getElementById("rider-login-email").value = correo;
+        e.target.reset();
+      } else {
+        alert(data.message || "Error al registrarse.");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Error de conexión al registrarse.");
+    });
+}
+
+function logoutRider() {
+  localStorage.removeItem('rider_token');
+  localStorage.removeItem('rider_info');
+  
+  // Clear map markers
+  if (driverMarker && map) map.removeLayer(driverMarker);
+  if (supplierMarker && map) map.removeLayer(supplierMarker);
+  if (clientMarker && map) map.removeLayer(clientMarker);
+  if (routeLine && map) map.removeLayer(routeLine);
+  
+  checkAuth();
+}
 
 /* ==========================================================================
    MAP IMPLEMENTATION (LEAFLET.JS)
@@ -68,12 +196,10 @@ function updateMapMarkers() {
   
   // 1. If GPS is Active, show Driver Marker
   if (localGPS) {
-    // Generate slightly offset driver location near center or supplier for realism
     let driverLat = DEFAULT_LAT;
     let driverLng = DEFAULT_LNG;
 
     if (currentActiveOrder) {
-      // Position driver near restaurant/supplier
       driverLat = currentActiveOrder.proveedorCoords.lat - 0.005;
       driverLng = currentActiveOrder.proveedorCoords.lng + 0.003;
     }
@@ -114,9 +240,7 @@ function updateMapMarkers() {
     clientMarker = L.marker([cCoords.lat, cCoords.lng], { icon: clientIcon }).addTo(map)
       .bindPopup(`<b>Cliente: ${currentActiveOrder.cliente}</b><br>${currentActiveOrder.clienteDireccion}`);
 
-    // Adjust instructions overlay
     if (localGPS) {
-      // Connect Driver -> Supplier -> Client
       const driverLat = driverMarker.getLatLng().lat;
       const driverLng = driverMarker.getLatLng().lng;
       
@@ -134,11 +258,9 @@ function updateMapMarkers() {
       mapOverlay.innerHTML = `<i class="fa-solid fa-route" style="color:var(--accent-green)"></i> Ruta de entrega trazada. Recoge en <b>${currentActiveOrder.proveedor}</b>.`;
       mapOverlay.classList.add('info-active');
 
-      // Fit map to include all markers
       const group = new L.featureGroup([driverMarker, supplierMarker, clientMarker]);
       map.fitBounds(group.getBounds().pad(0.15));
     } else {
-      // Only Restaurant -> Client route line
       routeLine = L.polyline([
         [sCoords.lat, sCoords.lng],
         [cCoords.lat, cCoords.lng]
@@ -156,7 +278,6 @@ function updateMapMarkers() {
       map.fitBounds(group.getBounds().pad(0.15));
     }
   } else {
-    // No active order
     mapOverlay.innerHTML = localGPS 
       ? `<i class="fa-solid fa-location-dot" style="color:var(--accent-green)"></i> GPS Activado. Esperando asignación de ruta...` 
       : `<i class="fa-solid fa-route"></i> Activa el GPS y tu disponibilidad para trazar la ruta de entrega.`;
@@ -174,8 +295,18 @@ function updateMapMarkers() {
    BACKEND SYNC & PROFILE LOAD
    ========================================================================== */
 function loadDriverProfile() {
-  fetch('/api/repartidor')
-    .then(res => res.json())
+  const token = localStorage.getItem('rider_token');
+  if (!token) return logoutRider();
+
+  fetch('/api/repartidor', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+    .then(res => {
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('Unauthorized');
+      }
+      return res.json();
+    })
     .then(data => {
       // Sync local control states
       localDisponibilidad = data.disponible;
@@ -190,11 +321,15 @@ function loadDriverProfile() {
 
       // Update Profile UI texts
       document.getElementById('nav-driver-name').innerText = data.nombre;
-      document.getElementById('card-moto-desc').innerText = `${data.motocicleta.marca} ${data.motocicleta.modelo}`;
-      document.getElementById('card-moto-placa').innerText = data.motocicleta.placa;
-      document.getElementById('card-moto-color').innerText = data.motocicleta.color;
-      document.getElementById('card-licencia-num').innerText = data.licencia.numero;
-      document.getElementById('card-licencia-exp').innerText = data.licencia.expiracion;
+      
+      const vehicleDesc = data.motocicleta.marca ? `${data.motocicleta.marca} ${data.motocicleta.modelo}` : 'Moto';
+      const vehiclePlate = data.motocicleta.placa ? ` - ${data.motocicleta.placa}` : '';
+      document.getElementById('nav-driver-vehicle').innerText = `${vehicleDesc}${vehiclePlate}`;
+      document.getElementById('card-moto-desc').innerText = vehicleDesc;
+      document.getElementById('card-moto-placa').innerText = data.motocicleta.placa || 'N/A';
+      document.getElementById('card-moto-color').innerText = data.motocicleta.color || 'N/A';
+      document.getElementById('card-licencia-num').innerText = data.licencia.numero || 'N/A';
+      document.getElementById('card-licencia-exp').innerText = data.licencia.expiracion || 'N/A';
 
       // Update Header Badges
       updateBadgeState();
@@ -205,13 +340,13 @@ function loadDriverProfile() {
       // Populate Modal Edit inputs
       document.getElementById('form-nombre').value = data.nombre;
       document.getElementById('form-correo').value = data.correo;
-      document.getElementById('form-contrasenia').value = data.contrasenia;
-      document.getElementById('form-moto-marca').value = data.motocicleta.marca;
-      document.getElementById('form-moto-modelo').value = data.motocicleta.modelo;
-      document.getElementById('form-moto-placa').value = data.motocicleta.placa;
-      document.getElementById('form-moto-color').value = data.motocicleta.color;
-      document.getElementById('form-licencia-num').value = data.licencia.numero;
-      document.getElementById('form-licencia-exp').value = data.licencia.expiracion;
+      document.getElementById('form-contrasenia').value = ''; // Don't prefill password
+      document.getElementById('form-moto-marca').value = data.motocicleta.marca || '';
+      document.getElementById('form-moto-modelo').value = data.motocicleta.modelo || '';
+      document.getElementById('form-moto-placa').value = data.motocicleta.placa || '';
+      document.getElementById('form-moto-color').value = data.motocicleta.color || '';
+      document.getElementById('form-licencia-num').value = data.licencia.numero || '';
+      document.getElementById('form-licencia-exp').value = data.licencia.expiracion || '';
 
       // Render Active Order if exists
       renderActiveOrder();
@@ -225,7 +360,10 @@ function loadDriverProfile() {
       // Update markers
       updateMapMarkers();
     })
-    .catch(err => console.error("Error loading driver data:", err));
+    .catch(err => {
+      console.error("Error loading driver data:", err);
+      logoutRider();
+    });
 }
 
 function updateBadgeState() {
@@ -315,7 +453,6 @@ function renderActiveOrder() {
 }
 
 function startOrStopPolling() {
-  // Check availability
   if (localDisponibilidad && !currentActiveOrder) {
     if (!isPollingOffers) {
       isPollingOffers = true;
@@ -329,21 +466,23 @@ function startOrStopPolling() {
       isPollingOffers = false;
       console.log("Stopped polling available orders.");
     }
-    // Clean list visually
     renderOffersList([]);
   }
 }
 
 function pollOffers() {
-  fetch('/api/pedidos/disponibles')
+  const token = localStorage.getItem('rider_token');
+  if (!token) return;
+
+  fetch('/api/pedidos/disponibles', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
     .then(res => res.json())
     .then(data => {
-      // Double check availability matches
       if (!data.disponible) {
         renderOffersList([]);
         return;
       }
-      
       renderOffersList(data.ofertas);
     })
     .catch(err => console.error("Error polling offers:", err));
@@ -362,7 +501,6 @@ function renderOffersList(ofertas) {
     return;
   }
 
-  // Compare and check if we have a NEW offer to play alert sound
   let hasNewOffer = false;
   ofertas.forEach(o => {
     if (!knownOfferIds.has(o.id)) {
@@ -375,7 +513,6 @@ function renderOffersList(ofertas) {
     playAlertSound();
   }
 
-  // Clear container
   container.innerHTML = '';
 
   ofertas.forEach(o => {
@@ -421,9 +558,13 @@ function playSuccessSound() {
 
 // Global scope functions for dynamic HTML button binding
 window.aceptarOferta = function(id) {
+  const token = localStorage.getItem('rider_token');
   fetch('/api/pedidos/aceptar', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     body: JSON.stringify({ id })
   })
     .then(res => res.json())
@@ -431,11 +572,7 @@ window.aceptarOferta = function(id) {
       if (data.success) {
         currentActiveOrder = data.pedidoActivo;
         knownOfferIds.clear();
-        
-        // Stop checking other offers
         startOrStopPolling();
-        
-        // Update UI
         renderActiveOrder();
         updateMapMarkers();
       } else {
@@ -446,9 +583,13 @@ window.aceptarOferta = function(id) {
 };
 
 window.rechazarOferta = function(id) {
+  const token = localStorage.getItem('rider_token');
   fetch('/api/pedidos/rechazar', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     body: JSON.stringify({ id })
   })
     .then(res => res.json())
@@ -464,9 +605,11 @@ window.rechazarOferta = function(id) {
 // Complete Delivery (Notify Provider)
 function completeActiveDelivery() {
   if (!currentActiveOrder) return;
+  const token = localStorage.getItem('rider_token');
 
   fetch('/api/pedidos/entregado', {
-    method: 'POST'
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` }
   })
     .then(res => res.json())
     .then(data => {
@@ -475,20 +618,10 @@ function completeActiveDelivery() {
         alert("¡Entrega Exitosa! El proveedor ha sido notificado del cierre de pedido.");
         
         currentActiveOrder = null;
-        
-        // Update Stats UI
         updateStatsUI(data.gananciasAcumuladas, data.puntosAcumulados, data.pedidosHoy);
-        
-        // Refresh History Log
         renderHistory(data.historial);
-        
-        // Reset Active Order Card
         renderActiveOrder();
-        
-        // Re-enable polling
         startOrStopPolling();
-        
-        // Update Map Markers
         updateMapMarkers();
       } else {
         alert(data.message || "Error al completar el pedido.");
@@ -535,12 +668,27 @@ function renderHistory(historial) {
    ========================================================================== */
 function setupEventListeners() {
   
+  // Rider Authentication View Tab switching
+  document.getElementById('tab-rider-login').addEventListener('click', () => switchRiderAuthTab('login'));
+  document.getElementById('tab-rider-register').addEventListener('click', () => switchRiderAuthTab('register'));
+
+  // Rider forms submission
+  document.getElementById('form-rider-login').addEventListener('submit', handleRiderLogin);
+  document.getElementById('form-rider-register').addEventListener('submit', handleRiderRegister);
+
+  // Rider logout trigger
+  document.getElementById('btn-rider-logout').addEventListener('click', logoutRider);
+
   // Toggle Availability
   document.getElementById('toggle-disponibilidad').addEventListener('change', (e) => {
     const checked = e.target.checked;
+    const token = localStorage.getItem('rider_token');
     fetch('/api/repartidor/disponibilidad', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({ disponible: checked })
     })
       .then(res => res.json())
@@ -559,9 +707,13 @@ function setupEventListeners() {
   // Toggle Alerts
   document.getElementById('toggle-alertas').addEventListener('change', (e) => {
     const checked = e.target.checked;
+    const token = localStorage.getItem('rider_token');
     fetch('/api/repartidor/alertas', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({ alertasActivas: checked })
     })
       .then(res => res.json())
@@ -576,9 +728,13 @@ function setupEventListeners() {
   // Toggle GPS
   document.getElementById('toggle-gps').addEventListener('change', (e) => {
     const checked = e.target.checked;
+    const token = localStorage.getItem('rider_token');
     fetch('/api/repartidor/gps', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({ gpsActivo: checked })
     })
       .then(res => res.json())
@@ -610,7 +766,6 @@ function setupEventListeners() {
   editTrigger.addEventListener('click', openModal);
   closeBtn.addEventListener('click', closeModal);
 
-  // Close modal when clicking outside overlay content
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
   });
@@ -618,11 +773,11 @@ function setupEventListeners() {
   // Profile Form Submission
   document.getElementById('profile-form').addEventListener('submit', (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('rider_token');
 
     const payload = {
       nombre: document.getElementById('form-nombre').value,
       correo: document.getElementById('form-correo').value,
-      contrasenia: document.getElementById('form-contrasenia').value,
       motocicleta: {
         marca: document.getElementById('form-moto-marca').value,
         modelo: document.getElementById('form-moto-modelo').value,
@@ -635,16 +790,23 @@ function setupEventListeners() {
       }
     };
 
+    const newPass = document.getElementById('form-contrasenia').value.trim();
+    if (newPass) {
+      payload.contrasenia = newPass;
+    }
+
     fetch('/api/repartidor', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(payload)
     })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           closeModal();
-          // Reload updated UI data
           loadDriverProfile();
           alert("Datos actualizados correctamente.");
         } else {
@@ -656,11 +818,15 @@ function setupEventListeners() {
 
   // Manual simulation helper button event
   document.getElementById('btn-manual-sim').addEventListener('click', () => {
-    fetch('/api/pedidos/simular-oferta', { method: 'POST' })
+    const token = localStorage.getItem('rider_token');
+    fetch('/api/pedidos/simular-oferta', { 
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          pollOffers(); // Fetch newly simulated offer instantly
+          pollOffers();
         } else {
           alert(data.message);
         }

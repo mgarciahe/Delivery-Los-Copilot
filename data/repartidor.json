@@ -15,32 +15,19 @@
   "disponible": true,
   "alertasActivas": false,
   "gpsActivo": true,
-  "gananciasAcumuladas": 1250.5,
-  "puntosAcumulados": 350,
-  "pedidosHoy": 0,
-  "pedidoActivo": {
-    "id": "ORD-692",
-    "proveedor": "Tacos El Pastorcito",
-    "proveedorDireccion": "Diagonal 6, 10-22, Zona 10",
-    "proveedorCoords": {
-      "lat": 14.61589,
-      "lng": -90.53489
-    },
-    "cliente": "Luis Fernando Ortiz",
-    "clienteDireccion": "Residenciales Alamedas, Calle 3, Zona 15",
-    "clienteCoords": {
-      "lat": 14.62012,
-      "lng": -90.50123
-    },
-    "detalles": [
-      "1x Combo Premium Sushi (18 piezas)",
-      "1x Té Frío de Limón"
-    ],
-    "pago": 20.52,
-    "puntos": 11,
-    "tiempoSimulado": "20-25 min"
-  },
+  "gananciasAcumuladas": 1271.02,
+  "puntosAcumulados": 361,
+  "pedidosHoy": 1,
+  "pedidoActivo": null,
   "historialEntregas": [
+    {
+      "id": "ORD-692",
+      "fecha": "2026-06-18T15:12:45.252Z",
+      "proveedor": "Tacos El Pastorcito",
+      "cliente": "Luis Fernando Ortiz",
+      "pago": 20.52,
+      "puntos": 11
+    },
     {
       "id": "ORD-089",
       "fecha": "2026-06-17T09:30:00.000Z",

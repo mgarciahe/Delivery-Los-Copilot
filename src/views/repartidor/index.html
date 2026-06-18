@@ -38,16 +38,122 @@
       </div>
     </div>
 
-    <div class="driver-profile-mini" id="open-profile-btn">
-      <div class="profile-info">
-        <span class="profile-name" id="nav-driver-name">Repartidor</span>
-        <span class="profile-role">Moto - M-4589X</span>
+    <div class="header-profile-wrapper" style="display:flex; align-items:center; gap: 12px;">
+      <div class="driver-profile-mini" id="open-profile-btn">
+        <div class="profile-info">
+          <span class="profile-name" id="nav-driver-name">Repartidor</span>
+          <span class="profile-role" id="nav-driver-vehicle">Moto - M-4589X</span>
+        </div>
+        <div class="profile-avatar">
+          <i class="fa-solid fa-user-ninja"></i>
+        </div>
       </div>
-      <div class="profile-avatar">
-        <i class="fa-solid fa-user-ninja"></i>
-      </div>
+      <button class="btn btn-outline btn-sm" id="btn-rider-logout" style="padding: 8px 12px; border-radius: var(--radius-sm); background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
     </div>
   </header>
+
+  <!-- Rider Authentication View -->
+  <section id="view-rider-auth" class="rider-auth-section hidden" style="display:flex; align-items:center; justify-content:center; min-height:calc(100vh - 120px); padding:40px 24px;">
+    <div class="rider-auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-rider-login">Ingreso Repartidor</button>
+        <button class="auth-tab" id="tab-rider-register">Registro Repartidor</button>
+      </div>
+
+      <!-- Rider Login Form -->
+      <form id="form-rider-login" class="auth-form">
+        <h2 class="auth-title">Acceso Repartidores 🛵</h2>
+        <p class="auth-subtitle">Ingresa para ver ofertas de envío y gestionar entregas en tiempo real.</p>
+
+        <div class="form-group">
+          <label for="rider-login-email">Correo Electrónico</label>
+          <div class="input-wrapper">
+            <i class="fa-regular fa-envelope input-icon"></i>
+            <input type="email" id="rider-login-email" required placeholder="correo@repartidor.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="rider-login-password">Contraseña</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="rider-login-password" required placeholder="••••••••">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
+      </form>
+
+      <!-- Rider Register Form -->
+      <form id="form-rider-register" class="auth-form hidden">
+        <h2 class="auth-title">Registrarse como Repartidor 🚀</h2>
+        <p class="auth-subtitle">Únete al equipo y empieza a generar ganancias de inmediato.</p>
+
+        <div class="form-group">
+          <label for="rider-reg-name">Nombre Completo</label>
+          <div class="input-wrapper">
+            <i class="fa-regular fa-user input-icon"></i>
+            <input type="text" id="rider-reg-name" required placeholder="Ej. Juan Carlos Pérez">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="rider-reg-email">Correo Electrónico</label>
+          <div class="input-wrapper">
+            <i class="fa-regular fa-envelope input-icon"></i>
+            <input type="email" id="rider-reg-email" required placeholder="correo@repartidor.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="rider-reg-password">Contraseña</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="rider-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres">
+          </div>
+        </div>
+
+        <div class="form-section-title" style="margin: 20px 0 10px 0; font-size: 0.95rem; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">Detalles de la Motocicleta</div>
+        
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="rider-reg-moto-marca">Marca</label>
+            <input type="text" id="rider-reg-moto-marca" placeholder="Ej. Honda" required style="width: 100%; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); outline: none;">
+          </div>
+          <div class="form-group">
+            <label for="rider-reg-moto-modelo">Modelo</label>
+            <input type="text" id="rider-reg-moto-modelo" placeholder="Ej. CB190R" required style="width: 100%; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); outline: none;">
+          </div>
+        </div>
+
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="rider-reg-moto-placa">Placa</label>
+            <input type="text" id="rider-reg-moto-placa" placeholder="Ej. M-4589X" required style="width: 100%; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); outline: none;">
+          </div>
+          <div class="form-group">
+            <label for="rider-reg-moto-color">Color</label>
+            <input type="text" id="rider-reg-moto-color" placeholder="Ej. Rojo" required style="width: 100%; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); outline: none;">
+          </div>
+        </div>
+
+        <div class="form-section-title" style="margin: 20px 0 10px 0; font-size: 0.95rem; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">Datos de Licencia</div>
+        
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="rider-reg-licencia-num">Número de Licencia</label>
+            <input type="text" id="rider-reg-licencia-num" placeholder="Ej. 0102-150890-101-2" required style="width: 100%; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); outline: none;">
+          </div>
+          <div class="form-group">
+            <label for="rider-reg-licencia-exp">Fecha Expiración</label>
+            <input type="date" id="rider-reg-licencia-exp" required style="width: 100%; padding: 11px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); outline: none;">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 24px;">Crear Cuenta de Repartidor</button>
+      </form>
+    </div>
+  </section>
 
   <!-- Main Container -->
   <main class="dashboard-container">

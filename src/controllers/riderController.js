@@ -1,56 +1,11 @@
 /**
  * =============================================================================
  * CONTROLLER: riderController.js
- * Propósito: CRUD de repartidores y simulación de asignación/entregas de pedidos
+ * Propósito: CRUD de repartidores y simulación de asignación/entregas de pedidos usando MySQL
  * =============================================================================
  */
 
-const fs = require('fs');
-const path = require('path');
-
-const DATA_FILE = path.join(__dirname, '../../data/repartidor.json');
-
-// Helper to read data
-function readData() {
-  try {
-    if (!fs.existsSync(DATA_FILE)) {
-      fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-      const defaultData = {
-        nombre: "Juan Carlos Pérez",
-        correo: "juan.delivery@copilot.com",
-        contrasenia: "password123",
-        motocicleta: { marca: "Honda", modelo: "CB190R", placa: "M-4589X", color: "Rojo" },
-        licencia: { numero: "0102-150890-101-2", expiracion: "2029-12-31" },
-        disponible: false,
-        alertasActivas: true,
-        gpsActivo: false,
-        gananciasAcumuladas: 1250.50,
-        puntosAcumulados: 350,
-        pedidosHoy: 0,
-        pedidoActivo: null,
-        historialEntregas: []
-      };
-      fs.writeFileSync(DATA_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
-      return defaultData;
-    }
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error("Error reading database file in riderController:", err);
-    return {};
-  }
-}
-
-// Helper to write data
-function writeData(data) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-    return true;
-  } catch (err) {
-    console.error("Error writing database file in riderController:", err);
-    return false;
-  }
-}
+const pool = require('../models/db');
 
 // Simulated active offers pool
 let ofertasDisponibles = [];
@@ -98,182 +53,297 @@ function generarOrdenAleatoria() {
   };
 }
 
-// Start automatic generation simulation
-setInterval(() => {
-  const data = readData();
-  if (data.disponible && data.alertasActivas && !data.pedidoActivo) {
-    if (ofertasDisponibles.length < 3) {
-      const nuevaOferta = generarOrdenAleatoria();
-      ofertasDisponibles.push(nuevaOferta);
-      console.log(`[SIMULACIÓN RIDER] Nuevo pedido disponible: ${nuevaOferta.id}`);
+// Start automatic generation simulation using DB active riders checks
+setInterval(async () => {
+  try {
+    const [activeRiders] = await pool.query(
+      "SELECT id FROM repartidores WHERE disponible = 1 AND alertas_activas = 1 AND pedido_activo IS NULL"
+    );
+    if (activeRiders.length > 0) {
+      if (ofertasDisponibles.length < 3) {
+        const nuevaOferta = generarOrdenAleatoria();
+        ofertasDisponibles.push(nuevaOferta);
+        console.log(`[SIMULACIÓN RIDER] Nuevo pedido disponible: ${nuevaOferta.id}`);
+      }
+    } else {
+      if (ofertasDisponibles.length > 0) {
+        ofertasDisponibles = [];
+        console.log("[SIMULACIÓN RIDER] Ofertas limpiadas debido a inactividad de repartidores.");
+      }
     }
-  } else {
-    if (ofertasDisponibles.length > 0) {
-      ofertasDisponibles = [];
-      console.log("[SIMULACIÓN RIDER] Ofertas limpiadas debido a inactividad del repartidor.");
-    }
+  } catch (err) {
+    console.error("[SIMULACIÓN RIDER] Error in simulator loop:", err.message);
   }
 }, 10000);
 
 /**
  * GET /api/repartidor
- * Obtiene el estado del repartidor
+ * Obtiene el estado del repartidor (requiere autenticación)
  */
-const getRider = (req, res) => {
-  const data = readData();
-  res.json(data);
+const getRider = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
+    const [rows] = await pool.query('SELECT * FROM repartidores WHERE id = ?', [riderId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Repartidor no encontrado.' });
+    }
+    const dbRider = rows[0];
+
+    // Formatear respuesta para el frontend
+    const responseData = {
+      id: dbRider.id,
+      nombre: dbRider.nombre,
+      correo: dbRider.correo,
+      motocicleta: {
+        marca: dbRider.moto_marca || '',
+        modelo: dbRider.moto_modelo || '',
+        placa: dbRider.moto_placa || '',
+        color: dbRider.moto_color || ''
+      },
+      licencia: {
+        numero: dbRider.licencia_numero || '',
+        expiracion: dbRider.licencia_expiracion ? dbRider.licencia_expiracion.toISOString().split('T')[0] : ''
+      },
+      disponible: !!dbRider.disponible,
+      alertasActivas: !!dbRider.alertas_activas,
+      gpsActivo: !!dbRider.gps_activo,
+      gananciasAcumuladas: parseFloat(dbRider.ganancias_acumuladas || 0),
+      puntosAcumulados: parseInt(dbRider.puntos_acumulados || 0),
+      pedidosHoy: parseInt(dbRider.pedidos_hoy || 0),
+      pedidoActivo: dbRider.pedido_activo ? JSON.parse(dbRider.pedido_activo) : null,
+      historialEntregas: dbRider.historial_entregas ? JSON.parse(dbRider.historial_entregas) : []
+    };
+
+    res.json(responseData);
+  } catch (error) {
+    console.error('Error en getRider:', error);
+    res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+  }
 };
 
 /**
  * POST /api/repartidor
- * Actualiza el perfil del repartidor
+ * Actualiza el perfil del repartidor (requiere autenticación)
  */
-const updateRider = (req, res) => {
-  const data = readData();
-  const { nombre, correo, contrasenia, motocicleta, licencia } = req.body;
+const updateRider = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
+    const { nombre, correo, contrasenia, motocicleta, licencia } = req.body;
 
-  if (nombre) data.nombre = nombre;
-  if (correo) data.correo = correo;
-  if (contrasenia) data.contrasenia = contrasenia;
-  if (motocicleta) {
-    data.motocicleta = { ...data.motocicleta, ...motocicleta };
-  }
-  if (licencia) {
-    data.licencia = { ...data.licencia, ...licencia };
-  }
+    let updateFields = [];
+    let queryParams = [];
 
-  if (writeData(data)) {
-    res.json({ success: true, data });
-  } else {
-    res.status(500).json({ success: false, message: "Error al guardar el perfil en el servidor." });
+    if (nombre) { updateFields.push('nombre = ?'); queryParams.push(nombre); }
+    if (correo) { updateFields.push('correo = ?'); queryParams.push(correo); }
+    if (contrasenia) {
+      const bcrypt = require('bcrypt');
+      const passwordHash = await bcrypt.hash(contrasenia, 10);
+      updateFields.push('password = ?');
+      queryParams.push(passwordHash);
+    }
+    if (motocicleta) {
+      if (motocicleta.marca !== undefined) { updateFields.push('moto_marca = ?'); queryParams.push(motocicleta.marca); }
+      if (motocicleta.modelo !== undefined) { updateFields.push('moto_modelo = ?'); queryParams.push(motocicleta.modelo); }
+      if (motocicleta.placa !== undefined) { updateFields.push('moto_placa = ?'); queryParams.push(motocicleta.placa); }
+      if (motocicleta.color !== undefined) { updateFields.push('moto_color = ?'); queryParams.push(motocicleta.color); }
+    }
+    if (licencia) {
+      if (licencia.numero !== undefined) { updateFields.push('licencia_numero = ?'); queryParams.push(licencia.numero); }
+      if (licencia.expiracion !== undefined) { updateFields.push('licencia_expiracion = ?'); queryParams.push(licencia.expiracion || null); }
+    }
+
+    if (updateFields.length === 0) {
+      return res.json({ success: true, message: 'No se enviaron campos para actualizar.' });
+    }
+
+    queryParams.push(riderId);
+    await pool.query(
+      `UPDATE repartidores SET ${updateFields.join(', ')} WHERE id = ?`,
+      queryParams
+    );
+
+    // Obtener los datos actualizados
+    const [rows] = await pool.query('SELECT * FROM repartidores WHERE id = ?', [riderId]);
+    const dbRider = rows[0];
+    const responseData = {
+      id: dbRider.id,
+      nombre: dbRider.nombre,
+      correo: dbRider.correo,
+      motocicleta: {
+        marca: dbRider.moto_marca || '',
+        modelo: dbRider.moto_modelo || '',
+        placa: dbRider.moto_placa || '',
+        color: dbRider.moto_color || ''
+      },
+      licencia: {
+        numero: dbRider.licencia_numero || '',
+        expiracion: dbRider.licencia_expiracion ? dbRider.licencia_expiracion.toISOString().split('T')[0] : ''
+      },
+      disponible: !!dbRider.disponible,
+      alertasActivas: !!dbRider.alertas_activas,
+      gpsActivo: !!dbRider.gps_activo,
+      gananciasAcumuladas: parseFloat(dbRider.ganancias_acumuladas || 0),
+      puntosAcumulados: parseInt(dbRider.puntos_acumulados || 0),
+      pedidosHoy: parseInt(dbRider.pedidos_hoy || 0),
+      pedidoActivo: dbRider.pedido_activo ? JSON.parse(dbRider.pedido_activo) : null,
+      historialEntregas: dbRider.historial_entregas ? JSON.parse(dbRider.historial_entregas) : []
+    };
+
+    res.json({ success: true, data: responseData });
+  } catch (error) {
+    console.error('Error en updateRider:', error);
+    res.status(500).json({ success: false, message: 'Error interno al actualizar datos.' });
   }
 };
 
 /**
  * POST /api/repartidor/disponibilidad
- * Activa/desactiva disponibilidad del repartidor
+ * Activa/desactiva disponibilidad del repartidor (requiere autenticación)
  */
-const toggleDisponibilidad = (req, res) => {
-  const data = readData();
-  const { disponible } = req.body;
+const toggleDisponibilidad = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
+    const { disponible } = req.body;
 
-  data.disponible = !!disponible;
-  
-  if (!data.disponible) {
-    ofertasDisponibles = [];
-  }
+    const value = disponible ? 1 : 0;
+    await pool.query('UPDATE repartidores SET disponible = ? WHERE id = ?', [value, riderId]);
 
-  if (writeData(data)) {
     res.json({ 
       success: true, 
-      disponible: data.disponible, 
-      message: data.disponible ? "Disponibilidad activada. Buscando pedidos..." : "Disponibilidad desactivada. Excluido del sistema de asignación." 
+      disponible: !!disponible, 
+      message: disponible ? "Disponibilidad activada. Buscando pedidos..." : "Disponibilidad desactivada. Excluido del sistema de asignación." 
     });
-  } else {
-    res.status(500).json({ success: false, message: "Error de servidor al guardar la disponibilidad." });
+  } catch (error) {
+    console.error('Error en toggleDisponibilidad:', error);
+    res.status(500).json({ success: false, message: 'Error interno de servidor.' });
   }
 };
 
 /**
  * POST /api/repartidor/alertas
- * Alterna el estado de alertas activas
+ * Alterna el estado de alertas activas (requiere autenticación)
  */
-const toggleAlertas = (req, res) => {
-  const data = readData();
-  const { alertasActivas } = req.body;
+const toggleAlertas = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
+    const { alertasActivas } = req.body;
 
-  data.alertasActivas = !!alertasActivas;
-  if (writeData(data)) {
-    res.json({ success: true, alertasActivas: data.alertasActivas });
-  } else {
-    res.status(500).json({ success: false });
+    const value = alertasActivas ? 1 : 0;
+    await pool.query('UPDATE repartidores SET alertas_activas = ? WHERE id = ?', [value, riderId]);
+
+    res.json({ success: true, alertasActivas: !!alertasActivas });
+  } catch (error) {
+    console.error('Error en toggleAlertas:', error);
+    res.status(500).json({ success: false, message: 'Error interno.' });
   }
 };
 
 /**
  * POST /api/repartidor/gps
- * Alterna el estado del GPS
+ * Alterna el estado del GPS (requiere autenticación)
  */
-const toggleGps = (req, res) => {
-  const data = readData();
-  const { gpsActivo } = req.body;
+const toggleGps = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
+    const { gpsActivo } = req.body;
 
-  data.gpsActivo = !!gpsActivo;
-  if (writeData(data)) {
-    res.json({ success: true, gpsActivo: data.gpsActivo });
-  } else {
-    res.status(500).json({ success: false });
+    const value = gpsActivo ? 1 : 0;
+    await pool.query('UPDATE repartidores SET gps_activo = ? WHERE id = ?', [value, riderId]);
+
+    res.json({ success: true, gpsActivo: !!gpsActivo });
+  } catch (error) {
+    console.error('Error en toggleGps:', error);
+    res.status(500).json({ success: false, message: 'Error interno.' });
   }
 };
 
 /**
  * GET /api/pedidos/disponibles
- * Obtiene ofertas disponibles para el repartidor
+ * Obtiene ofertas disponibles para el repartidor (requiere autenticación)
  */
-const getDisponibleOrders = (req, res) => {
-  const data = readData();
-  
-  if (!data.disponible) {
-    ofertasDisponibles = [];
-    return res.json({ 
-      disponible: false, 
-      ofertas: [], 
-      message: "Excluido por no estar disponible." 
-    });
-  }
+const getDisponibleOrders = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
+    const [rows] = await pool.query('SELECT disponible FROM repartidores WHERE id = ?', [riderId]);
+    if (rows.length === 0 || !rows[0].disponible) {
+      return res.json({ 
+        disponible: false, 
+        ofertas: [], 
+        message: "Excluido por no estar disponible." 
+      });
+    }
 
-  res.json({ 
-    disponible: true, 
-    ofertas: ofertasDisponibles 
-  });
+    res.json({ 
+      disponible: true, 
+      ofertas: ofertasDisponibles 
+    });
+  } catch (error) {
+    console.error('Error en getDisponibleOrders:', error);
+    res.status(500).json({ success: false, message: 'Error interno.' });
+  }
 };
 
 /**
  * POST /api/pedidos/simular-oferta
- * Genera y simula una oferta manual
+ * Genera y simula una oferta manual (requiere autenticación)
  */
-const simularOferta = (req, res) => {
-  const data = readData();
-  
-  if (!data.disponible) {
-    return res.status(403).json({ 
-      success: false, 
-      message: "Aislamiento de Disponibilidad: No se pueden generar ni consultar pedidos si la disponibilidad está desactivada." 
-    });
-  }
+const simularOferta = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
+    const [rows] = await pool.query('SELECT disponible FROM repartidores WHERE id = ?', [riderId]);
+    
+    if (rows.length === 0 || !rows[0].disponible) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Aislamiento de Disponibilidad: No se pueden generar ni consultar pedidos si la disponibilidad está desactivada." 
+      });
+    }
 
-  const nuevaOferta = generarOrdenAleatoria();
-  ofertasDisponibles.unshift(nuevaOferta);
-  res.json({ success: true, oferta: nuevaOferta });
+    const nuevaOferta = generarOrdenAleatoria();
+    ofertasDisponibles.unshift(nuevaOferta);
+    res.json({ success: true, oferta: nuevaOferta });
+  } catch (error) {
+    console.error('Error en simularOferta:', error);
+    res.status(500).json({ success: false, message: 'Error interno.' });
+  }
 };
 
 /**
  * POST /api/pedidos/aceptar
- * Acepta un pedido y lo asocia al repartidor
+ * Acepta un pedido y lo asocia al repartidor (requiere autenticación)
  */
-const aceptarPedido = (req, res) => {
-  const data = readData();
-  const { id } = req.body;
+const aceptarPedido = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
+    const { id } = req.body;
 
-  if (!data.disponible) {
-    return res.status(400).json({ success: false, message: "Debe activar su disponibilidad para aceptar pedidos." });
-  }
-  if (data.pedidoActivo) {
-    return res.status(400).json({ success: false, message: "Ya tiene un pedido activo." });
-  }
+    const [rows] = await pool.query('SELECT disponible, pedido_activo FROM repartidores WHERE id = ?', [riderId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Repartidor no encontrado." });
+    }
+    const rider = rows[0];
 
-  const index = ofertasDisponibles.findIndex(o => o.id === id);
-  if (index === -1) {
-    return res.status(404).json({ success: false, message: "El pedido ya no está disponible." });
-  }
+    if (!rider.disponible) {
+      return res.status(400).json({ success: false, message: "Debe activar su disponibilidad para aceptar pedidos." });
+    }
+    if (rider.pedido_activo) {
+      return res.status(400).json({ success: false, message: "Ya tiene un pedido activo." });
+    }
 
-  const pedido = ofertasDisponibles[index];
-  data.pedidoActivo = pedido;
-  ofertasDisponibles = []; // Limpiar las demás
+    const index = ofertasDisponibles.findIndex(o => o.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: "El pedido ya no está disponible." });
+    }
 
-  if (writeData(data)) {
-    res.json({ success: true, pedidoActivo: data.pedidoActivo });
-  } else {
+    const pedido = ofertasDisponibles[index];
+    const pedidoStr = JSON.stringify(pedido);
+
+    await pool.query('UPDATE repartidores SET pedido_activo = ? WHERE id = ?', [pedidoStr, riderId]);
+    ofertasDisponibles = []; // Limpiar las demás
+
+    res.json({ success: true, pedidoActivo: pedido });
+  } catch (error) {
+    console.error('Error en aceptarPedido:', error);
     res.status(500).json({ success: false, message: "Error al registrar la aceptación del pedido." });
   }
 };
@@ -290,43 +360,63 @@ const rechazarPedido = (req, res) => {
 
 /**
  * POST /api/pedidos/entregado
- * Marca el pedido activo como entregado y acumula ganancias/puntos
+ * Marca el pedido activo como entregado y acumula ganancias/puntos (requiere autenticación)
  */
-const completarPedido = (req, res) => {
-  const data = readData();
-  
-  if (!data.pedidoActivo) {
-    return res.status(400).json({ success: false, message: "No hay ningún pedido activo para entregar." });
-  }
+const completarPedido = async (req, res) => {
+  try {
+    const riderId = req.repartidor.id;
 
-  const pedido = data.pedidoActivo;
-  
-  data.gananciasAcumuladas = parseFloat((data.gananciasAcumuladas + pedido.pago).toFixed(2));
-  data.puntosAcumulados += pedido.puntos;
-  data.pedidosHoy += 1;
+    const [rows] = await pool.query(
+      'SELECT pedido_activo, ganancias_acumuladas, puntos_acumulados, pedidos_hoy, historial_entregas FROM repartidores WHERE id = ?', 
+      [riderId]
+    );
 
-  const entrega = {
-    id: pedido.id,
-    fecha: new Date().toISOString(),
-    proveedor: pedido.proveedor,
-    cliente: pedido.cliente,
-    pago: pedido.pago,
-    puntos: pedido.puntos
-  };
-  
-  data.historialEntregas.unshift(entrega);
-  data.pedidoActivo = null;
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Repartidor no encontrado." });
+    }
+    
+    const dbRider = rows[0];
+    if (!dbRider.pedido_activo) {
+      return res.status(400).json({ success: false, message: "No hay ningún pedido activo para entregar." });
+    }
 
-  if (writeData(data)) {
+    const pedido = JSON.parse(dbRider.pedido_activo);
+    
+    const nuevasGanancias = parseFloat((parseFloat(dbRider.ganancias_acumuladas || 0) + parseFloat(pedido.pago || 0)).toFixed(2));
+    const nuevosPuntos = parseInt(dbRider.puntos_acumulados || 0) + parseInt(pedido.puntos || 0);
+    const nuevosPedidosHoy = parseInt(dbRider.pedidos_hoy || 0) + 1;
+
+    const entrega = {
+      id: pedido.id,
+      fecha: new Date().toISOString(),
+      proveedor: pedido.proveedor,
+      cliente: pedido.cliente,
+      pago: pedido.pago,
+      puntos: pedido.puntos
+    };
+    
+    const historial = dbRider.historial_entregas ? JSON.parse(dbRider.historial_entregas) : [];
+    historial.unshift(entrega);
+    
+    const historialStr = JSON.stringify(historial);
+
+    await pool.query(
+      `UPDATE repartidores 
+       SET ganancias_acumuladas = ?, puntos_acumulados = ?, pedidos_hoy = ?, historial_entregas = ?, pedido_activo = NULL 
+       WHERE id = ?`,
+      [nuevasGanancias, nuevosPuntos, nuevosPedidosHoy, historialStr, riderId]
+    );
+
     res.json({ 
       success: true, 
       message: "Entrega completada exitosamente. Proveedor notificado.",
-      gananciasAcumuladas: data.gananciasAcumuladas,
-      puntosAcumulados: data.puntosAcumulados,
-      pedidosHoy: data.pedidosHoy,
-      historial: data.historialEntregas
+      gananciasAcumuladas: nuevasGanancias,
+      puntosAcumulados: nuevosPuntos,
+      pedidosHoy: nuevosPedidosHoy,
+      historial: historial
     });
-  } else {
+  } catch (error) {
+    console.error('Error en completarPedido:', error);
     res.status(500).json({ success: false, message: "Error al actualizar los datos en el servidor." });
   }
 };

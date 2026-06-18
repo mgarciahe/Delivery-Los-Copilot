@@ -165,6 +165,11 @@ function setupEventListeners() {
         }
     });
 
+    // Botón para acceder al portal de repartidores
+    document.getElementById("btn-portal-repartidores").addEventListener("click", () => {
+        window.location.href = "/repartidor";
+    });
+
     // Toggles de la vista de autenticación de clientes
     document.getElementById("btn-show-login").addEventListener("click", () => {
         showView("auth");

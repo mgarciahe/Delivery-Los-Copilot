@@ -50,17 +50,21 @@ app.get('/api/provider/orders', authController.authenticateProvider, providerCon
 app.put('/api/provider/orders/:id/status', authController.authenticateProvider, providerController.updateProviderOrderStatus);
 app.get('/api/provider/analytics', authController.authenticateProvider, providerController.getProviderAnalytics);
 
-// 4. Endpoints del Módulo de Repartidores (Riders - Pedro)
-app.get('/api/repartidor', riderController.getRider);
-app.post('/api/repartidor', riderController.updateRider);
-app.post('/api/repartidor/disponibilidad', riderController.toggleDisponibilidad);
-app.post('/api/repartidor/alertas', riderController.toggleAlertas);
-app.post('/api/repartidor/gps', riderController.toggleGps);
-app.get('/api/pedidos/disponibles', riderController.getDisponibleOrders);
-app.post('/api/pedidos/simular-oferta', riderController.simularOferta);
-app.post('/api/pedidos/aceptar', riderController.aceptarPedido);
-app.post('/api/pedidos/rechazar', riderController.rechazarPedido);
-app.post('/api/pedidos/entregado', riderController.completarPedido);
+// 4. Endpoints de Registro y Autenticación del Repartidor (Rider)
+app.post('/api/rider/register', authController.registerRider);
+app.post('/api/rider/login', authController.loginRider);
+
+// 5. Endpoints Seguros del Módulo de Repartidores (Riders - Protegidos con JWT)
+app.get('/api/repartidor', authController.authenticateRider, riderController.getRider);
+app.post('/api/repartidor', authController.authenticateRider, riderController.updateRider);
+app.post('/api/repartidor/disponibilidad', authController.authenticateRider, riderController.toggleDisponibilidad);
+app.post('/api/repartidor/alertas', authController.authenticateRider, riderController.toggleAlertas);
+app.post('/api/repartidor/gps', authController.authenticateRider, riderController.toggleGps);
+app.get('/api/pedidos/disponibles', authController.authenticateRider, riderController.getDisponibleOrders);
+app.post('/api/pedidos/simular-oferta', authController.authenticateRider, riderController.simularOferta);
+app.post('/api/pedidos/aceptar', authController.authenticateRider, riderController.aceptarPedido);
+app.post('/api/pedidos/rechazar', authController.authenticateRider, riderController.rechazarPedido);
+app.post('/api/pedidos/entregado', authController.authenticateRider, riderController.completarPedido);
 
 // =============================================================================
 // SERVICIO DE ARCHIVOS ESTÁTICOS (VISTAS)

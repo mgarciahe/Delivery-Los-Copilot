@@ -179,8 +179,174 @@ const loginProvider = async (req, res) => {
     }
 };
 
+/**
+ * Middleware: Verificar token JWT del Repartidor (Rider)
+ */
+const authenticateRider = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    
+    if (!authHeader) {
+        return res.status(401).json({
+            success: false,
+            message: 'Acceso denegado. No se proporcionó un token de autenticación.'
+        });
+    }
+
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+        return res.status(401).json({
+            success: false,
+            message: 'Formato de token inválido. El formato requerido es "Bearer <token>".'
+        });
+    }
+
+    const token = parts[1];
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.repartidor = decoded; // Inyectar el repartidor decodificado
+        next();
+    } catch (error) {
+        console.error('❌ Error de validación de token JWT para Repartidor:', error.message);
+        
+        let errorMessage = 'Token inválido o expirado.';
+        if (error.name === 'TokenExpiredError') {
+            errorMessage = 'El token de autenticación ha expirado.';
+        }
+
+        return res.status(403).json({
+            success: false,
+            message: errorMessage
+        });
+    }
+};
+
+/**
+ * POST /api/rider/register
+ * Registro de un nuevo repartidor
+ */
+const registerRider = async (req, res) => {
+    const { nombre, correo, password, motocicleta, licencia } = req.body;
+
+    if (!nombre || !correo || !password) {
+        return res.status(400).json({
+            success: false,
+            message: 'Los campos nombre, correo y password son obligatorios.'
+        });
+    }
+
+    try {
+        const [existing] = await pool.query('SELECT id FROM repartidores WHERE correo = ?', [correo]);
+        if (existing.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'El correo electrónico ya está registrado por otro repartidor.'
+            });
+        }
+
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        // Extraer datos del vehículo y licencia
+        const marca = motocicleta ? motocicleta.marca : null;
+        const modelo = motocicleta ? motocicleta.modelo : null;
+        const placa = motocicleta ? motocicleta.placa : null;
+        const color = motocicleta ? motocicleta.color : null;
+        
+        const lic_num = licencia ? licencia.numero : null;
+        const lic_exp = licencia ? licencia.expiracion : null;
+
+        const [result] = await pool.query(
+            `INSERT INTO repartidores (nombre, correo, password, moto_marca, moto_modelo, moto_placa, moto_color, licencia_numero, licencia_expiracion) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [nombre, correo, passwordHash, marca, modelo, placa, color, lic_num, lic_exp]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Repartidor registrado exitosamente.',
+            data: {
+                id: result.insertId,
+                nombre,
+                correo
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error en el registro de repartidor:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor al procesar el registro.'
+        });
+    }
+};
+
+/**
+ * POST /api/rider/login
+ * Inicio de sesión del repartidor
+ */
+const loginRider = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({
+            success: false,
+            message: 'Email y password son campos requeridos.'
+        });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            'SELECT * FROM repartidores WHERE correo = ?',
+            [email]
+        );
+
+        if (rows.length === 0) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales inválidas. Correo electrónico o contraseña incorrectos.'
+            });
+        }
+
+        const repartidor = rows[0];
+
+        const match = await bcrypt.compare(password, repartidor.password);
+        if (!match) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales inválidas. Correo electrónico o contraseña incorrectos.'
+            });
+        }
+
+        const token = jwt.sign(
+            { id: repartidor.id, nombre: repartidor.nombre, correo: repartidor.correo },
+            JWT_SECRET,
+            { expiresIn: '8h' }
+        );
+
+        res.json({
+            success: true,
+            message: 'Autenticación exitosa.',
+            token,
+            repartidor: {
+                id: repartidor.id,
+                nombre: repartidor.nombre,
+                correo: repartidor.correo
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error en el login de repartidor:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor durante el inicio de sesión.'
+        });
+    }
+};
+
 module.exports = {
     authenticateProvider,
     registerProvider,
-    loginProvider
+    loginProvider,
+    authenticateRider,
+    registerRider,
+    loginRider
 };
