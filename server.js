@@ -36,6 +36,7 @@ const riderController = require('./src/controllers/riderController');
 app.get('/api/restaurantes', menusController.getRestaurantes);
 app.get('/api/platillos', menusController.getPlatillos);
 app.post('/api/orders', menusController.createOrder); // Registro de pedidos de clientes en MySQL
+app.get('/api/orders/:id', menusController.getOrderStatus);
 
 // 2. Endpoints de Registro y Autenticación del Proveedor (Restaurante)
 app.post('/api/provider/register', authController.registerProvider);

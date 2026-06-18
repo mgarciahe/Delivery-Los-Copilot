@@ -675,13 +675,11 @@ async function handlePlaceOrder() {
             document.getElementById("track-merchant-address").textContent = activeOrder.merchantAddress;
             document.getElementById("track-eta").textContent = activeOrder.eta;
             
-            // Repartidor aleatorio asignado
-            const randomRider = repartidoresSemilla[result.pedido_id % repartidoresSemilla.length];
-            const randomAvatar = driverAvatars[result.pedido_id % driverAvatars.length];
-            document.getElementById("driver-name").textContent = randomRider.nombre;
-            document.getElementById("driver-avatar").src = randomAvatar;
+            // Repartidor inicial (se actualizará en tiempo real)
+            document.getElementById("driver-name").textContent = "Buscando repartidor...";
+            document.getElementById("driver-avatar").src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80";
 
-            startTrackerSimulation();
+            startRealOrderTracking(result.pedido_id);
         } else {
             showToast(result.message || "Error al procesar el pedido.", true);
         }
@@ -691,8 +689,8 @@ async function handlePlaceOrder() {
     }
 }
 
-// Simulación de movimiento del repartidor
-function startTrackerSimulation() {
+// Seguimiento real del pedido en base de datos
+function startRealOrderTracking(orderId) {
     if (orderSimulationInterval) clearInterval(orderSimulationInterval);
 
     const steps = [
@@ -713,38 +711,96 @@ function startTrackerSimulation() {
         else el.classList.remove("active");
     });
 
+    let lastState = 'Pendiente';
     let progressPercent = 0;
-    let currentStep = 1;
-
-    orderSimulationInterval = setInterval(() => {
-        progressPercent += 2;
-
-        const offset = 400 - (400 * (progressPercent / 100));
-        progressLine.style.strokeDashoffset = offset;
-
-        // Trayecto Bezier Bézier: Q0=(100,300), Q1=(250,200), Q2=(400,100)
-        const t = progressPercent / 100;
-        const x = Math.pow(1 - t, 2) * 100 + 2 * (1 - t) * t * 250 + Math.pow(t, 2) * 400;
-        const y = Math.pow(1 - t, 2) * 300 + 2 * (1 - t) * t * 200 + Math.pow(t, 2) * 100;
-        bike.setAttribute("transform", `translate(${x}, ${y})`);
-
-        if (progressPercent >= 25 && currentStep === 1) {
-            currentStep = 2;
-            steps[1].classList.add("active");
-            showToast("¡El restaurante ha comenzado a preparar tu comida!");
-        } else if (progressPercent >= 60 && currentStep === 2) {
-            currentStep = 3;
-            steps[2].classList.add("active");
-            document.getElementById("track-eta").textContent = "5 min";
-            showToast("¡El repartidor lleva tu pedido en camino!");
-        } else if (progressPercent >= 100) {
-            clearInterval(orderSimulationInterval);
-            steps[3].classList.add("active");
-            document.getElementById("track-eta").textContent = "¡Entregado!";
-            showToast("¡Pedido entregado con éxito! ¡Que disfrutes tu comida!");
-            activeOrder = null;
+    
+    // Animación del icono de la moto
+    let currentX = 100, currentY = 300;
+    let targetX = 100, targetY = 300;
+    
+    const animateBike = () => {
+        if (Math.abs(currentX - targetX) > 0.5 || Math.abs(currentY - targetY) > 0.5) {
+            currentX += (targetX - currentX) * 0.1;
+            currentY += (targetY - currentY) * 0.1;
+            bike.setAttribute("transform", `translate(${currentX}, ${currentY})`);
+            requestAnimationFrame(animateBike);
         }
-    }, 400);
+    };
+
+    orderSimulationInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/orders/${orderId}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            
+            if (data.success && data.order) {
+                const estado = data.order.estado;
+                
+                // Actualizar info del repartidor si está asignado
+                if (data.rider) {
+                    document.getElementById("driver-name").textContent = data.rider.nombre;
+                    const avatar = driverAvatars[data.order.id % driverAvatars.length];
+                    document.getElementById("driver-avatar").src = avatar;
+                } else {
+                    document.getElementById("driver-name").textContent = "Buscando repartidor...";
+                    document.getElementById("driver-avatar").src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80";
+                }
+
+                // Manejo de los estados en la interfaz
+                if (estado === 'Pendiente') {
+                    steps[0].classList.add("active");
+                    steps[1].classList.remove("active");
+                    steps[2].classList.remove("active");
+                    steps[3].classList.remove("active");
+                    progressPercent = 0;
+                    document.getElementById("track-eta").textContent = `${data.order.tiempo_entrega_min} min`;
+                } else if (estado === 'Preparando') {
+                    if (lastState === 'Pendiente') {
+                        showToast("¡El restaurante ha comenzado a preparar tu comida!");
+                    }
+                    steps[0].classList.add("active");
+                    steps[1].classList.add("active");
+                    steps[2].classList.remove("active");
+                    steps[3].classList.remove("active");
+                    progressPercent = 33;
+                    document.getElementById("track-eta").textContent = `${Math.max(5, data.order.tiempo_entrega_min - 5)} min`;
+                } else if (estado === 'Enviado') {
+                    if (lastState === 'Pendiente' || lastState === 'Preparando') {
+                        showToast("¡El repartidor lleva tu pedido en camino!");
+                    }
+                    steps[0].classList.add("active");
+                    steps[1].classList.add("active");
+                    steps[2].classList.add("active");
+                    steps[3].classList.remove("active");
+                    progressPercent = 66;
+                    document.getElementById("track-eta").textContent = "5 min";
+                } else if (estado === 'Entregado') {
+                    showToast("¡Pedido entregado con éxito! ¡Que disfrutes tu comida!");
+                    steps[0].classList.add("active");
+                    steps[1].classList.add("active");
+                    steps[2].classList.add("active");
+                    steps[3].classList.add("active");
+                    progressPercent = 100;
+                    document.getElementById("track-eta").textContent = "¡Entregado!";
+                    clearInterval(orderSimulationInterval);
+                    activeOrder = null;
+                }
+                
+                // Mover la moto en el SVG
+                const offset = 400 - (400 * (progressPercent / 100));
+                progressLine.style.strokeDashoffset = offset;
+                
+                const t = progressPercent / 100;
+                targetX = Math.pow(1 - t, 2) * 100 + 2 * (1 - t) * t * 250 + Math.pow(t, 2) * 400;
+                targetY = Math.pow(1 - t, 2) * 300 + 2 * (1 - t) * t * 200 + Math.pow(t, 2) * 100;
+                animateBike();
+
+                lastState = estado;
+            }
+        } catch (e) {
+            console.error("Error polling order status:", e);
+        }
+    }, 3000);
 }
 
 // ==========================================================================

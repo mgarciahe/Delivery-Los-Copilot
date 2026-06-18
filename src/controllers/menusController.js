@@ -154,8 +154,59 @@ const createOrder = async (req, res) => {
     }
 };
 
+const getOrderStatus = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [orderRows] = await pool.query(
+            `SELECT p.id, p.id_restaurante, p.estado, p.total, p.id_repartidor, r.nombre AS restaurante_nombre, r.direccion AS restaurante_direccion, r.tiempo_entrega_min 
+             FROM pedidos p 
+             JOIN restaurantes r ON p.id_restaurante = r.id 
+             WHERE p.id = ?`,
+            [id]
+        );
+
+        if (orderRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pedido no encontrado.' });
+        }
+
+        const order = orderRows[0];
+        let rider = null;
+
+        if (order.id_repartidor) {
+            const [riderRows] = await pool.query(
+                `SELECT nombre, moto_marca, moto_modelo, moto_placa, moto_color FROM repartidores WHERE id = ?`,
+                [order.id_repartidor]
+            );
+            if (riderRows.length > 0) {
+                const dbRider = riderRows[0];
+                rider = {
+                    nombre: dbRider.nombre,
+                    vehiculo: `${dbRider.moto_marca || ''} ${dbRider.moto_modelo || ''} (Placa: ${dbRider.moto_placa || 'N/A'})`.trim()
+                };
+            }
+        }
+
+        res.json({
+            success: true,
+            order: {
+                id: order.id,
+                estado: order.estado,
+                total: order.total,
+                restaurante_nombre: order.restaurante_nombre,
+                restaurante_direccion: order.restaurante_direccion,
+                tiempo_entrega_min: order.tiempo_entrega_min
+            },
+            rider: rider
+        });
+    } catch (error) {
+        console.error('Error al obtener estado del pedido:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+    }
+};
+
 module.exports = {
     getRestaurantes,
     getPlatillos,
-    createOrder
+    createOrder,
+    getOrderStatus
 };

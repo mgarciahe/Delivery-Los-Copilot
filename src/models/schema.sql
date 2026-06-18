@@ -92,6 +92,7 @@ CREATE INDEX `idx_restaurante_categoria` ON `platillos` (`id_restaurante`, `cate
 CREATE TABLE `pedidos` (
     `id` INT AUTO_INCREMENT COMMENT 'Clave primaria autoincremental del pedido',
     `id_restaurante` INT NOT NULL COMMENT 'Relación con el restaurante que procesa el pedido',
+    `id_repartidor` INT NULL COMMENT 'Relación con el repartidor asignado',
     `cliente_nombre` VARCHAR(100) NOT NULL COMMENT 'Nombre del cliente',
     `direccion_entrega` VARCHAR(255) NOT NULL COMMENT 'Dirección de envío',
     `telefono_cliente` VARCHAR(20) NOT NULL COMMENT 'Teléfono de contacto',
@@ -103,6 +104,11 @@ CREATE TABLE `pedidos` (
         FOREIGN KEY (`id_restaurante`)
         REFERENCES `restaurantes` (`id`)
         ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT `fk_pedidos_repartidores`
+        FOREIGN KEY (`id_repartidor`)
+        REFERENCES `repartidores` (`id`)
+        ON DELETE SET NULL
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

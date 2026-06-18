@@ -7,74 +7,8 @@
 
 const pool = require('../models/db');
 
-// Simulated active offers pool
-let ofertasDisponibles = [];
+// Simulación en memoria eliminada para usar integración real de base de datos.
 
-// Helper to generate a random order
-function generarOrdenAleatoria() {
-  const restaurantes = [
-    { nombre: "Pizzería La Toscana", lat: 14.62843, lng: -90.52254, dir: "Calle Real 4-12, Zona 10" },
-    { nombre: "Burgers & Beers", lat: 14.60212, lng: -90.51342, dir: "Avenida Reforma 12-45, Zona 9" },
-    { nombre: "Tacos El Pastorcito", lat: 14.61589, lng: -90.53489, dir: "Diagonal 6, 10-22, Zona 10" },
-    { nombre: "Sushi Roll Masters", lat: 14.59321, lng: -90.50543, dir: "Bulevar Los Próceres 18-90, Zona 10" }
-  ];
-  const clientes = [
-    { nombre: "Carlos Mendoza", lat: 14.63245, lng: -90.51876, dir: "Apartamento 4B, Edificio Las Pilas, Zona 4" },
-    { nombre: "Ana Sofía Gómez", lat: 14.60876, lng: -90.52543, dir: "Condominio El Encanto, Casa 15, Zona 14" },
-    { nombre: "Luis Fernando Ortiz", lat: 14.62012, lng: -90.50123, dir: "Residenciales Alamedas, Calle 3, Zona 15" }
-  ];
-  const itemsLista = [
-    ["1x Pizza Familiar Margherita", "2x Refrescos de Lata"],
-    ["2x Doble Bacon Burger", "1x Papas Fritas Grandes", "1x Shake de Fresa"],
-    ["5x Tacos al Pastor con Queso", "1x Horchata Grande"],
-    ["1x Combo Premium Sushi (18 piezas)", "1x Té Frío de Limón"]
-  ];
-
-  const idxRes = Math.floor(Math.random() * restaurantes.length);
-  const idxCli = Math.floor(Math.random() * clientes.length);
-  const idxItem = Math.floor(Math.random() * itemsLista.length);
-  const pago = parseFloat((15 + Math.random() * 25).toFixed(2));
-  const puntos = Math.floor(10 + Math.random() * 20);
-
-  const randId = "ORD-" + Math.floor(100 + Math.random() * 900);
-
-  return {
-    id: randId,
-    proveedor: restaurantes[idxRes].nombre,
-    proveedorDireccion: restaurantes[idxRes].dir,
-    proveedorCoords: { lat: restaurantes[idxRes].lat, lng: restaurantes[idxRes].lng },
-    cliente: clientes[idxCli].nombre,
-    clienteDireccion: clientes[idxCli].dir,
-    clienteCoords: { lat: clientes[idxCli].lat, lng: clientes[idxCli].lng },
-    detalles: itemsLista[idxItem],
-    pago: pago,
-    puntos: puntos,
-    tiempoSimulado: "20-25 min"
-  };
-}
-
-// Start automatic generation simulation using DB active riders checks
-setInterval(async () => {
-  try {
-    const [activeRiders] = await pool.query(
-      "SELECT id FROM repartidores WHERE disponible = 1 AND alertas_activas = 1 AND pedido_activo IS NULL"
-    );
-    if (activeRiders.length > 0) {
-      if (ofertasDisponibles.length < 3) {
-        const nuevaOferta = generarOrdenAleatoria();
-        ofertasDisponibles.push(nuevaOferta);
-        console.log(`[SIMULACIÓN RIDER] Nuevo pedido disponible: ${nuevaOferta.id}`);
-      }
-    } else {
-      if (ofertasDisponibles.length > 0) {
-        ofertasDisponibles = [];
-        console.log("[SIMULACIÓN RIDER] Ofertas limpiadas debido a inactividad de repartidores.");
-      }
-    }
-  } catch (err) {
-    console.error("[SIMULACIÓN RIDER] Error in simulator loop:", err.message);
-  }
-}, 10000);
 
 /**
  * GET /api/repartidor
@@ -264,7 +198,7 @@ const toggleGps = async (req, res) => {
 const getDisponibleOrders = async (req, res) => {
   try {
     const riderId = req.repartidor.id;
-    const [rows] = await pool.query('SELECT disponible FROM repartidores WHERE id = ?', [riderId]);
+    const [rows] = await pool.query('SELECT disponible, pedido_activo FROM repartidores WHERE id = ?', [riderId]);
     if (rows.length === 0 || !rows[0].disponible) {
       return res.json({ 
         disponible: false, 
@@ -273,9 +207,71 @@ const getDisponibleOrders = async (req, res) => {
       });
     }
 
+    if (rows[0].pedido_activo) {
+      return res.json({
+        disponible: true,
+        ofertas: [],
+        message: "Ya tiene un pedido activo."
+      });
+    }
+
+    // Consultar todos los pedidos con estado 'Pendiente' en la base de datos
+    const [orders] = await pool.query(`
+      SELECT p.id, p.id_restaurante, p.cliente_nombre, p.direccion_entrega, p.telefono_cliente, p.total, p.creado_en, r.nombre AS restaurante_nombre, r.direccion AS restaurante_direccion
+      FROM pedidos p
+      JOIN restaurantes r ON p.id_restaurante = r.id
+      WHERE p.estado = 'Pendiente'
+      ORDER BY p.creado_en DESC
+    `);
+
+    const ofertas = [];
+    for (const order of orders) {
+      // Obtener detalles del pedido
+      const [details] = await pool.query(`
+        SELECT dp.cantidad, p.nombre AS platillo_nombre
+        FROM detalle_pedidos dp
+        JOIN platillos p ON dp.id_platillo = p.id
+        WHERE dp.id_pedido = ?
+      `, [order.id]);
+
+      const detallesList = details.map(d => `${d.cantidad}x ${d.platillo_nombre}`);
+
+      // Mapear coordenadas de restaurantes
+      let lat = 14.6133;
+      let lng = -90.5353;
+      if (order.id_restaurante === 1) { lat = 14.62843; lng = -90.52254; }
+      else if (order.id_restaurante === 2) { lat = 14.60212; lng = -90.51342; }
+      else if (order.id_restaurante === 3) { lat = 14.61589; lng = -90.53489; }
+      else if (order.id_restaurante === 4) { lat = 14.59321; lng = -90.50543; }
+      else if (order.id_restaurante === 5) { lat = 14.61000; lng = -90.53000; }
+
+      // Coordenadas simuladas para el cliente
+      const clientLat = lat + 0.005 + (order.id % 10) * 0.001;
+      const clientLng = lng - 0.005 - (order.id % 10) * 0.001;
+
+      // Calcular ganancias (10% del total + Q15 base)
+      const pago = parseFloat((15.00 + parseFloat(order.total) * 0.1).toFixed(2));
+      const puntos = Math.floor(pago * 0.5) + 5;
+
+      ofertas.push({
+        id: `PED-${order.id}`,
+        realOrderId: order.id,
+        proveedor: order.restaurante_nombre,
+        proveedorDireccion: order.restaurante_direccion || "Dirección del restaurante",
+        proveedorCoords: { lat, lng },
+        cliente: order.cliente_nombre,
+        clienteDireccion: order.direccion_entrega,
+        clienteCoords: { lat: clientLat, lng: clientLng },
+        detalles: detallesList,
+        pago: pago,
+        puntos: puntos,
+        tiempoSimulado: "15-20 min"
+      });
+    }
+
     res.json({ 
       disponible: true, 
-      ofertas: ofertasDisponibles 
+      ofertas: ofertas 
     });
   } catch (error) {
     console.error('Error en getDisponibleOrders:', error);
@@ -287,24 +283,78 @@ const getDisponibleOrders = async (req, res) => {
  * POST /api/pedidos/simular-oferta
  * Genera y simula una oferta manual (requiere autenticación)
  */
+/**
+ * POST /api/pedidos/simular-oferta
+ * Genera y simula una oferta manual creando un pedido real en la BD (requiere autenticación)
+ */
 const simularOferta = async (req, res) => {
+  let connection;
   try {
     const riderId = req.repartidor.id;
-    const [rows] = await pool.query('SELECT disponible FROM repartidores WHERE id = ?', [riderId]);
+    const [riderRows] = await pool.query('SELECT disponible FROM repartidores WHERE id = ?', [riderId]);
     
-    if (rows.length === 0 || !rows[0].disponible) {
+    if (riderRows.length === 0 || !riderRows[0].disponible) {
       return res.status(403).json({ 
         success: false, 
         message: "Aislamiento de Disponibilidad: No se pueden generar ni consultar pedidos si la disponibilidad está desactivada." 
       });
     }
 
-    const nuevaOferta = generarOrdenAleatoria();
-    ofertasDisponibles.unshift(nuevaOferta);
-    res.json({ success: true, oferta: nuevaOferta });
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // 1. Obtener un restaurante activo aleatorio de la BD
+    const [restaurants] = await connection.query('SELECT id, nombre, direccion FROM restaurantes WHERE activo = 1');
+    if (restaurants.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "No hay restaurantes activos en la base de datos." });
+    }
+    const restaurant = restaurants[Math.floor(Math.random() * restaurants.length)];
+
+    // 2. Obtener un platillo aleatorio de ese restaurante
+    const [dishes] = await connection.query('SELECT id, nombre, precio FROM platillos WHERE id_restaurante = ? AND disponible = 1', [restaurant.id]);
+    if (dishes.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: `El restaurante ${restaurant.nombre} no tiene platillos disponibles.` });
+    }
+    const dish = dishes[Math.floor(Math.random() * dishes.length)];
+
+    // 3. Crear pedido de prueba en la BD
+    const clientNames = ["Marcos López", "Sofía Ramírez", "Alejandro Pérez", "Gabriela Estrada", "Juan Carlos Luna"];
+    const clientName = clientNames[Math.floor(Math.random() * clientNames.length)];
+    const clientAddresses = ["Apartamento 5C, Edificio Reforma, Zona 9", "Residenciales El Frutal, Casa 12, Zona 18", "Ruta 4 2-56, Zona 4", "Diagonal 6, 12-40, Zona 10"];
+    const clientAddress = clientAddresses[Math.floor(Math.random() * clientAddresses.length)];
+    const clientPhone = "5555-" + Math.floor(1000 + Math.random() * 9000);
+    const quantity = Math.floor(1 + Math.random() * 3);
+    const total = parseFloat((parseFloat(dish.precio) * quantity).toFixed(2));
+
+    const [orderResult] = await connection.query(
+      `INSERT INTO pedidos (id_restaurante, cliente_nombre, direccion_entrega, telefono_cliente, total, estado)
+       VALUES (?, ?, ?, ?, ?, 'Pendiente')`,
+      [restaurant.id, clientName, clientAddress, clientPhone, total]
+    );
+    const orderId = orderResult.insertId;
+
+    await connection.query(
+      `INSERT INTO detalle_pedidos (id_pedido, id_platillo, cantidad, precio_unitario)
+       VALUES (?, ?, ?, ?)`,
+      [orderId, dish.id, quantity, dish.precio]
+    );
+
+    await connection.commit();
+    console.log(`[SIMULACIÓN RIDER] Pedido de prueba real creado en base de datos con ID: ${orderId}`);
+
+    res.json({ success: true, message: `Pedido de prueba PED-${orderId} creado en la base de datos.` });
   } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
     console.error('Error en simularOferta:', error);
     res.status(500).json({ success: false, message: 'Error interno.' });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
 
@@ -312,39 +362,116 @@ const simularOferta = async (req, res) => {
  * POST /api/pedidos/aceptar
  * Acepta un pedido y lo asocia al repartidor (requiere autenticación)
  */
+/**
+ * POST /api/pedidos/aceptar
+ * Acepta un pedido y lo asocia al repartidor (requiere autenticación)
+ */
 const aceptarPedido = async (req, res) => {
+  let connection;
   try {
     const riderId = req.repartidor.id;
     const { id } = req.body;
 
-    const [rows] = await pool.query('SELECT disponible, pedido_activo FROM repartidores WHERE id = ?', [riderId]);
-    if (rows.length === 0) {
+    const realOrderId = id.startsWith('PED-') ? parseInt(id.replace('PED-', '')) : parseInt(id);
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Comprobar la disponibilidad y pedido activo del repartidor
+    const [riderRows] = await connection.query('SELECT disponible, pedido_activo FROM repartidores WHERE id = ? FOR UPDATE', [riderId]);
+    if (riderRows.length === 0) {
+      await connection.rollback();
       return res.status(404).json({ success: false, message: "Repartidor no encontrado." });
     }
-    const rider = rows[0];
+    const rider = riderRows[0];
 
     if (!rider.disponible) {
+      await connection.rollback();
       return res.status(400).json({ success: false, message: "Debe activar su disponibilidad para aceptar pedidos." });
     }
     if (rider.pedido_activo) {
+      await connection.rollback();
       return res.status(400).json({ success: false, message: "Ya tiene un pedido activo." });
     }
 
-    const index = ofertasDisponibles.findIndex(o => o.id === id);
-    if (index === -1) {
-      return res.status(404).json({ success: false, message: "El pedido ya no está disponible." });
+    // Consultar el estado del pedido real en la BD
+    const [orderRows] = await connection.query(`
+      SELECT p.id, p.id_restaurante, p.cliente_nombre, p.direccion_entrega, p.telefono_cliente, p.total, p.estado, r.nombre AS restaurante_nombre, r.direccion AS restaurante_direccion
+      FROM pedidos p
+      JOIN restaurantes r ON p.id_restaurante = r.id
+      WHERE p.id = ? FOR UPDATE
+    `, [realOrderId]);
+
+    if (orderRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: "Pedido no encontrado." });
     }
 
-    const pedido = ofertasDisponibles[index];
-    const pedidoStr = JSON.stringify(pedido);
+    const order = orderRows[0];
+    if (order.estado !== 'Pendiente') {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "El pedido ya no está disponible (ya fue tomado o cancelado)." });
+    }
 
-    await pool.query('UPDATE repartidores SET pedido_activo = ? WHERE id = ?', [pedidoStr, riderId]);
-    ofertasDisponibles = []; // Limpiar las demás
+    // Obtener los platillos detallados
+    const [details] = await connection.query(`
+      SELECT dp.cantidad, p.nombre AS platillo_nombre
+      FROM detalle_pedidos dp
+      JOIN platillos p ON dp.id_platillo = p.id
+      WHERE dp.id_pedido = ?
+    `, [realOrderId]);
 
-    res.json({ success: true, pedidoActivo: pedido });
+    const detallesList = details.map(d => `${d.cantidad}x ${d.platillo_nombre}`);
+
+    // Mapear coordenadas de restaurantes
+    let lat = 14.6133;
+    let lng = -90.5353;
+    if (order.id_restaurante === 1) { lat = 14.62843; lng = -90.52254; }
+    else if (order.id_restaurante === 2) { lat = 14.60212; lng = -90.51342; }
+    else if (order.id_restaurante === 3) { lat = 14.61589; lng = -90.53489; }
+    else if (order.id_restaurante === 4) { lat = 14.59321; lng = -90.50543; }
+    else if (order.id_restaurante === 5) { lat = 14.61000; lng = -90.53000; }
+
+    const clientLat = lat + 0.005 + (order.id % 10) * 0.001;
+    const clientLng = lng - 0.005 - (order.id % 10) * 0.001;
+
+    // Calcular ganancias
+    const pago = parseFloat((15.00 + parseFloat(order.total) * 0.1).toFixed(2));
+    const puntos = Math.floor(pago * 0.5) + 5;
+
+    const pedidoObj = {
+      id: `PED-${order.id}`,
+      realOrderId: order.id,
+      proveedor: order.restaurante_nombre,
+      proveedorDireccion: order.restaurante_direccion || "Dirección del restaurante",
+      proveedorCoords: { lat, lng },
+      cliente: order.cliente_nombre,
+      clienteDireccion: order.direccion_entrega,
+      clienteCoords: { lat: clientLat, lng: clientLng },
+      detalles: detallesList,
+      pago: pago,
+      puntos: puntos,
+      tiempoSimulado: "15-20 min"
+    };
+
+    const pedidoStr = JSON.stringify(pedidoObj);
+
+    // Actualizar el estado del pedido y asignar al repartidor
+    await connection.query("UPDATE pedidos SET estado = 'Enviado', id_repartidor = ? WHERE id = ?", [riderId, realOrderId]);
+    await connection.query('UPDATE repartidores SET pedido_activo = ? WHERE id = ?', [pedidoStr, riderId]);
+
+    await connection.commit();
+    res.json({ success: true, pedidoActivo: pedidoObj });
   } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
     console.error('Error en aceptarPedido:', error);
     res.status(500).json({ success: false, message: "Error al registrar la aceptación del pedido." });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
 
@@ -352,35 +479,51 @@ const aceptarPedido = async (req, res) => {
  * POST /api/pedidos/rechazar
  * Rechaza/cancela una oferta de pedido
  */
+/**
+ * POST /api/pedidos/rechazar
+ * Rechaza una oferta de pedido (el filtrado principal ahora se hace en el cliente)
+ */
 const rechazarPedido = (req, res) => {
-  const { id } = req.body;
-  ofertasDisponibles = ofertasDisponibles.filter(o => o.id !== id);
-  res.json({ success: true, ofertas: ofertasDisponibles });
+  res.json({ success: true, message: "Rechazado correctamente." });
 };
 
 /**
  * POST /api/pedidos/entregado
  * Marca el pedido activo como entregado y acumula ganancias/puntos (requiere autenticación)
  */
+/**
+ * POST /api/pedidos/entregado
+ * Marca el pedido activo como entregado y acumula ganancias/puntos (requiere autenticación)
+ */
 const completarPedido = async (req, res) => {
+  let connection;
   try {
     const riderId = req.repartidor.id;
 
-    const [rows] = await pool.query(
-      'SELECT pedido_activo, ganancias_acumuladas, puntos_acumulados, pedidos_hoy, historial_entregas FROM repartidores WHERE id = ?', 
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      'SELECT pedido_activo, ganancias_acumuladas, puntos_acumulados, pedidos_hoy, historial_entregas FROM repartidores WHERE id = ? FOR UPDATE', 
       [riderId]
     );
 
     if (rows.length === 0) {
+      await connection.rollback();
       return res.status(404).json({ success: false, message: "Repartidor no encontrado." });
     }
     
     const dbRider = rows[0];
     if (!dbRider.pedido_activo) {
+      await connection.rollback();
       return res.status(400).json({ success: false, message: "No hay ningún pedido activo para entregar." });
     }
 
     const pedido = JSON.parse(dbRider.pedido_activo);
+    const realOrderId = pedido.realOrderId;
+
+    // Actualizar estado de la orden real en la BD
+    await connection.query("UPDATE pedidos SET estado = 'Entregado' WHERE id = ?", [realOrderId]);
     
     const nuevasGanancias = parseFloat((parseFloat(dbRider.ganancias_acumuladas || 0) + parseFloat(pedido.pago || 0)).toFixed(2));
     const nuevosPuntos = parseInt(dbRider.puntos_acumulados || 0) + parseInt(pedido.puntos || 0);
@@ -400,12 +543,14 @@ const completarPedido = async (req, res) => {
     
     const historialStr = JSON.stringify(historial);
 
-    await pool.query(
+    await connection.query(
       `UPDATE repartidores 
        SET ganancias_acumuladas = ?, puntos_acumulados = ?, pedidos_hoy = ?, historial_entregas = ?, pedido_activo = NULL 
        WHERE id = ?`,
       [nuevasGanancias, nuevosPuntos, nuevosPedidosHoy, historialStr, riderId]
     );
+
+    await connection.commit();
 
     res.json({ 
       success: true, 
@@ -416,8 +561,15 @@ const completarPedido = async (req, res) => {
       historial: historial
     });
   } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
     console.error('Error en completarPedido:', error);
     res.status(500).json({ success: false, message: "Error al actualizar los datos en el servidor." });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
 

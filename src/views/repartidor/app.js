@@ -12,6 +12,7 @@ let localDisponibilidad = false;
 let localGPS = false;
 let localAlertas = true;
 let knownOfferIds = new Set();
+let rejectedOfferIds = new Set();
 
 // Default Map Settings (Guatemala City area, matches coordinate mocks)
 const DEFAULT_LAT = 14.6133;
@@ -491,7 +492,10 @@ function pollOffers() {
 function renderOffersList(ofertas) {
   const container = document.getElementById('offers-list-container');
   
-  if (!ofertas || ofertas.length === 0) {
+  // Filtrar ofertas rechazadas localmente
+  const activeOfertas = (ofertas || []).filter(o => !rejectedOfferIds.has(o.id));
+  
+  if (activeOfertas.length === 0) {
     container.innerHTML = `
       <div class="no-offers">
         <i class="fa-solid fa-bell-slash"></i>
@@ -502,7 +506,7 @@ function renderOffersList(ofertas) {
   }
 
   let hasNewOffer = false;
-  ofertas.forEach(o => {
+  activeOfertas.forEach(o => {
     if (!knownOfferIds.has(o.id)) {
       hasNewOffer = true;
       knownOfferIds.add(o.id);
@@ -515,7 +519,7 @@ function renderOffersList(ofertas) {
 
   container.innerHTML = '';
 
-  ofertas.forEach(o => {
+  activeOfertas.forEach(o => {
     const card = document.createElement('div');
     card.className = 'offer-item';
     card.innerHTML = `
@@ -584,6 +588,9 @@ window.aceptarOferta = function(id) {
 
 window.rechazarOferta = function(id) {
   const token = localStorage.getItem('rider_token');
+  rejectedOfferIds.add(id);
+  knownOfferIds.delete(id);
+  
   fetch('/api/pedidos/rechazar', {
     method: 'POST',
     headers: { 
@@ -592,14 +599,13 @@ window.rechazarOferta = function(id) {
     },
     body: JSON.stringify({ id })
   })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        knownOfferIds.delete(id);
-        pollOffers(); // Refresh list
-      }
+    .then(() => {
+      pollOffers(); // Refresh list
     })
-    .catch(err => console.error("Error rejecting order:", err));
+    .catch(err => {
+      console.error("Error rejecting order on server:", err);
+      pollOffers();
+    });
 };
 
 // Complete Delivery (Notify Provider)
