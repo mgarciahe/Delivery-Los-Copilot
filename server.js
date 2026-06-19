@@ -32,11 +32,15 @@ const riderController = require('./src/controllers/riderController');
 // ENRUTAMIENTO DE APIs REST (MVC)
 // =============================================================================
 
-// 1. Endpoints Públicos de Menús (Consumidor)
+// 1. Endpoints de Menús (Consumidor) y Órdenes (Protegida)
 app.get('/api/restaurantes', menusController.getRestaurantes);
 app.get('/api/platillos', menusController.getPlatillos);
-app.post('/api/orders', menusController.createOrder); // Registro de pedidos de clientes en MySQL
+app.post('/api/orders', authController.authenticateCustomer, menusController.createOrder); // Registro de pedidos protegido con JWT
 app.get('/api/orders/:id', menusController.getOrderStatus);
+
+// 1.5. Endpoints de Registro y Autenticación del Cliente (Consumidor)
+app.post('/api/customer/register', authController.registerCustomer);
+app.post('/api/customer/login', authController.loginCustomer);
 
 // 2. Endpoints de Registro y Autenticación del Proveedor (Restaurante)
 app.post('/api/provider/register', authController.registerProvider);
@@ -62,7 +66,7 @@ app.post('/api/repartidor/disponibilidad', authController.authenticateRider, rid
 app.post('/api/repartidor/alertas', authController.authenticateRider, riderController.toggleAlertas);
 app.post('/api/repartidor/gps', authController.authenticateRider, riderController.toggleGps);
 app.get('/api/pedidos/disponibles', authController.authenticateRider, riderController.getDisponibleOrders);
-app.post('/api/pedidos/simular-oferta', authController.authenticateRider, riderController.simularOferta);
+// app.post('/api/pedidos/simular-oferta', authController.authenticateRider, riderController.simularOferta);
 app.post('/api/pedidos/aceptar', authController.authenticateRider, riderController.aceptarPedido);
 app.post('/api/pedidos/rechazar', authController.authenticateRider, riderController.rechazarPedido);
 app.post('/api/pedidos/entregado', authController.authenticateRider, riderController.completarPedido);

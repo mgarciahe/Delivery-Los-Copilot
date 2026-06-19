@@ -372,18 +372,15 @@ function updateBadgeState() {
   const badgeGPS = document.getElementById('badge-gps');
   const dispoDesc = document.getElementById('dispo-desc');
   const gpsDesc = document.getElementById('gps-desc');
-  const btnSim = document.getElementById('btn-manual-sim');
 
   if (localDisponibilidad) {
     badgeDispo.className = 'status-badge status-online';
     badgeDispo.innerHTML = '<span class="status-dot"></span><span class="status-text">Disponible</span>';
     dispoDesc.innerText = "Activo - Buscando entregas...";
-    btnSim.style.display = currentActiveOrder ? 'none' : 'inline-flex';
   } else {
     badgeDispo.className = 'status-badge status-offline';
     badgeDispo.innerHTML = '<span class="status-dot"></span><span class="status-text">No Disponible</span>';
     dispoDesc.innerText = "Apagado - No recibes ofertas";
-    btnSim.style.display = 'none';
   }
 
   if (localGPS) {
@@ -434,7 +431,6 @@ function renderActiveOrder() {
       listUl.appendChild(li);
     });
 
-    document.getElementById('btn-manual-sim').style.display = 'none';
   } else {
     details.classList.add('hidden');
     placeholder.classList.remove('hidden');
@@ -443,12 +439,10 @@ function renderActiveOrder() {
       placeholderTitle.innerText = "Buscando Ofertas de Pedidos...";
       placeholderSubtitle.innerText = "Los proveedores locales te están asignando entregas en tu zona.";
       placeholder.querySelector('.status-search-icon').className = "fa-solid fa-circle-notch fa-spin status-search-icon";
-      document.getElementById('btn-manual-sim').style.display = 'inline-flex';
     } else {
       placeholderTitle.innerText = "Panel Fuera de Línea";
       placeholderSubtitle.innerText = "Activa tu disponibilidad para empezar a recibir alertas de pedidos de los proveedores.";
       placeholder.querySelector('.status-search-icon').className = "fa-solid fa-power-off status-search-icon";
-      document.getElementById('btn-manual-sim').style.display = 'none';
     }
   }
 }
@@ -822,21 +816,4 @@ function setupEventListeners() {
       .catch(err => console.error("Error updating profile:", err));
   });
 
-  // Manual simulation helper button event
-  document.getElementById('btn-manual-sim').addEventListener('click', () => {
-    const token = localStorage.getItem('rider_token');
-    fetch('/api/pedidos/simular-oferta', { 
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          pollOffers();
-        } else {
-          alert(data.message);
-        }
-      })
-      .catch(err => console.error("Error simulating offer:", err));
-  });
 }

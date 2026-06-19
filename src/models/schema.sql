@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS `pedidos`;
 DROP TABLE IF EXISTS `platillos`;
 DROP TABLE IF EXISTS `restaurantes`;
 DROP TABLE IF EXISTS `repartidores`;
+DROP TABLE IF EXISTS `clientes`;
 
 -- =============================================================================
 -- TABLA: restaurantes (Estructura Original)
@@ -61,6 +62,19 @@ CREATE TABLE `repartidores` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================================================
+-- TABLA: clientes
+-- =============================================================================
+CREATE TABLE `clientes` (
+    `id` INT AUTO_INCREMENT COMMENT 'Clave primaria autoincremental del cliente',
+    `nombre` VARCHAR(100) NOT NULL COMMENT 'Nombre del cliente',
+    `apellido` VARCHAR(100) NOT NULL COMMENT 'Apellido del cliente',
+    `email` VARCHAR(100) UNIQUE NOT NULL COMMENT 'Correo electrónico único de acceso',
+    `password` VARCHAR(255) NOT NULL COMMENT 'Contraseña encriptada con bcrypt',
+    `creado_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Fecha de registro',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
 -- TABLA: platillos (o menus)
 -- =============================================================================
 CREATE TABLE `platillos` (
@@ -91,15 +105,21 @@ CREATE INDEX `idx_restaurante_categoria` ON `platillos` (`id_restaurante`, `cate
 -- =============================================================================
 CREATE TABLE `pedidos` (
     `id` INT AUTO_INCREMENT COMMENT 'Clave primaria autoincremental del pedido',
+    `id_cliente` INT NOT NULL COMMENT 'Relación con el cliente que realiza el pedido',
     `id_restaurante` INT NOT NULL COMMENT 'Relación con el restaurante que procesa el pedido',
     `id_repartidor` INT NULL COMMENT 'Relación con el repartidor asignado',
-    `cliente_nombre` VARCHAR(100) NOT NULL COMMENT 'Nombre del cliente',
+    `cliente_nombre` VARCHAR(100) NOT NULL COMMENT 'Nombre del cliente (copia para registro estático)',
     `direccion_entrega` VARCHAR(255) NOT NULL COMMENT 'Dirección de envío',
     `telefono_cliente` VARCHAR(20) NOT NULL COMMENT 'Teléfono de contacto',
     `total` DECIMAL(10, 2) NOT NULL COMMENT 'Total del pedido',
     `estado` VARCHAR(50) NOT NULL DEFAULT 'Pendiente' COMMENT 'Estado del pedido (Pendiente, Preparando, Enviado, Entregado, Cancelado)',
     `creado_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Fecha y hora del pedido',
     PRIMARY KEY (`id`),
+    CONSTRAINT `fk_pedidos_clientes`
+        FOREIGN KEY (`id_cliente`)
+        REFERENCES `clientes` (`id`)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
     CONSTRAINT `fk_pedidos_restaurantes`
         FOREIGN KEY (`id_restaurante`)
         REFERENCES `restaurantes` (`id`)

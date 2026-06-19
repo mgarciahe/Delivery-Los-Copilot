@@ -111,10 +111,11 @@ const createOrder = async (req, res) => {
         await connection.beginTransaction();
 
         // 1. Insertar cabecera del pedido
+        const id_cliente = req.cliente.id;
         const [orderResult] = await connection.query(
-            `INSERT INTO pedidos (id_restaurante, cliente_nombre, direccion_entrega, telefono_cliente, total, estado)
-             VALUES (?, ?, ?, ?, ?, 'Pendiente')`,
-            [id_restaurante, cliente_nombre, direccion_entrega, telefono_cliente, total]
+            `INSERT INTO pedidos (id_cliente, id_restaurante, cliente_nombre, direccion_entrega, telefono_cliente, total, estado)
+             VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')`,
+            [id_cliente, id_restaurante, cliente_nombre, direccion_entrega, telefono_cliente, total]
         );
 
         const pedido_id = orderResult.insertId;

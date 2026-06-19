@@ -342,11 +342,170 @@ const loginRider = async (req, res) => {
     }
 };
 
+/**
+ * Middleware: Verificar token JWT del Cliente (Usuario Consumidor)
+ */
+const authenticateCustomer = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    
+    if (!authHeader) {
+        return res.status(401).json({
+            success: false,
+            message: 'Acceso denegado. No se proporcionó un token de autenticación.'
+        });
+    }
+
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+        return res.status(401).json({
+            success: false,
+            message: 'Formato de token inválido. El formato requerido es "Bearer <token>".'
+        });
+    }
+
+    const token = parts[1];
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.cliente = decoded; // Inyectar el cliente decodificado
+        next();
+    } catch (error) {
+        console.error('❌ Error de validación de token JWT para Cliente:', error.message);
+        
+        let errorMessage = 'Token inválido o expirado.';
+        if (error.name === 'TokenExpiredError') {
+            errorMessage = 'El token de autenticación ha expirado.';
+        }
+
+        return res.status(403).json({
+            success: false,
+            message: errorMessage
+        });
+    }
+};
+
+/**
+ * POST /api/customer/register
+ * Registro de un nuevo cliente
+ */
+const registerCustomer = async (req, res) => {
+    const { nombre, apellido, email, password } = req.body;
+
+    if (!nombre || !apellido || !email || !password) {
+        return res.status(400).json({
+            success: false,
+            message: 'Todos los campos (nombre, apellido, email, password) son obligatorios.'
+        });
+    }
+
+    try {
+        const [existing] = await pool.query('SELECT id FROM clientes WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'El correo electrónico ya está registrado.'
+            });
+        }
+
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        const [result] = await pool.query(
+            `INSERT INTO clientes (nombre, apellido, email, password) 
+             VALUES (?, ?, ?, ?)`,
+            [nombre, apellido, email, passwordHash]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Cliente registrado exitosamente.',
+            data: {
+                id: result.insertId,
+                nombre,
+                apellido,
+                email
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error en el registro de cliente:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor al procesar el registro.'
+        });
+    }
+};
+
+/**
+ * POST /api/customer/login
+ * Inicio de sesión del cliente
+ */
+const loginCustomer = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({
+            success: false,
+            message: 'Email y password son requeridos.'
+        });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            'SELECT * FROM clientes WHERE email = ?',
+            [email]
+        );
+
+        if (rows.length === 0) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales inválidas. Correo electrónico o contraseña incorrectos.'
+            });
+        }
+
+        const cliente = rows[0];
+
+        const match = await bcrypt.compare(password, cliente.password);
+        if (!match) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales inválidas. Correo electrónico o contraseña incorrectos.'
+            });
+        }
+
+        const token = jwt.sign(
+            { id: cliente.id, nombre: cliente.nombre, apellido: cliente.apellido, email: cliente.email },
+            JWT_SECRET,
+            { expiresIn: '8h' }
+        );
+
+        res.json({
+            success: true,
+            message: 'Autenticación exitosa.',
+            token,
+            cliente: {
+                id: cliente.id,
+                nombre: cliente.nombre,
+                apellido: cliente.apellido,
+                email: cliente.email
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error en el login de cliente:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor durante el inicio de sesión.'
+        });
+    }
+};
+
 module.exports = {
     authenticateProvider,
     registerProvider,
     loginProvider,
     authenticateRider,
     registerRider,
-    loginRider
+    loginRider,
+    authenticateCustomer,
+    registerCustomer,
+    loginCustomer
 };

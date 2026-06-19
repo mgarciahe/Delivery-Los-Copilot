@@ -7,6 +7,7 @@
 
 // --- ESTADO GLOBAL ---
 let currentUser = null;
+let currentUserToken = null;
 let currentProvider = null;
 let providerToken = null;
 
@@ -67,8 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
 function initSessions() {
     // Cliente
     const savedUser = localStorage.getItem("copilots_user");
-    if (savedUser) {
+    const savedClientToken = localStorage.getItem("copilots_user_token");
+    if (savedUser && savedClientToken) {
         currentUser = JSON.parse(savedUser);
+        currentUserToken = savedClientToken;
         updateHeaderUI();
     }
     
@@ -322,33 +325,49 @@ function switchAuthTab(tab) {
     }
 }
 
-function handleCustomerLogin(e) {
+async function handleCustomerLogin(e) {
     e.preventDefault();
     const email = document.getElementById("login-email").value.trim();
     const password = document.getElementById("login-password").value;
 
     if (password.length < 6) {
-        showToast("Contraseña incorrecta (mínimo 6 caracteres).", true);
+        showToast("La contraseña debe tener al menos 6 caracteres.", true);
         return;
     }
 
-    let name = "Miguel";
-    let lastname = "García";
-    if (email.includes("@")) {
-        name = email.split("@")[0];
-        name = name.charAt(0).toUpperCase() + name.slice(1);
-    }
+    try {
+        const response = await fetch('/api/customer/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const result = await response.json();
 
-    currentUser = { name, lastname, email };
-    localStorage.setItem("copilots_user", JSON.stringify(currentUser));
-    
-    showToast(`¡Bienvenido de vuelta, ${name}!`);
-    updateHeaderUI();
-    e.target.reset();
-    showView("dashboard");
+        if (response.ok && result.success) {
+            currentUser = {
+                id: result.cliente.id,
+                name: result.cliente.nombre,
+                lastname: result.cliente.apellido,
+                email: result.cliente.email
+            };
+            currentUserToken = result.token;
+            localStorage.setItem("copilots_user", JSON.stringify(currentUser));
+            localStorage.setItem("copilots_user_token", currentUserToken);
+
+            showToast(`¡Bienvenido de vuelta, ${currentUser.name}!`);
+            updateHeaderUI();
+            e.target.reset();
+            showView("dashboard");
+        } else {
+            showToast(result.message || "Credenciales inválidas.", true);
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Error de red al intentar iniciar sesión.", true);
+    }
 }
 
-function handleCustomerRegister(e) {
+async function handleCustomerRegister(e) {
     e.preventDefault();
     const name = document.getElementById("register-name").value.trim();
     const lastname = document.getElementById("register-lastname").value.trim();
@@ -360,18 +379,53 @@ function handleCustomerRegister(e) {
         return;
     }
 
-    currentUser = { name, lastname, email };
-    localStorage.setItem("copilots_user", JSON.stringify(currentUser));
+    try {
+        const response = await fetch('/api/customer/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre: name, apellido: lastname, email, password })
+        });
+        const result = await response.json();
 
-    showToast(`¡Cuenta creada con éxito! Bienvenido, ${name}`);
-    updateHeaderUI();
-    e.target.reset();
-    showView("dashboard");
+        if (response.ok && result.success) {
+            // Auto login después del registro
+            const loginRes = await fetch('/api/customer/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const loginResult = await loginRes.json();
+
+            if (loginRes.ok && loginResult.success) {
+                currentUser = {
+                    id: loginResult.cliente.id,
+                    name: loginResult.cliente.nombre,
+                    lastname: loginResult.cliente.apellido,
+                    email: loginResult.cliente.email
+                };
+                currentUserToken = loginResult.token;
+                localStorage.setItem("copilots_user", JSON.stringify(currentUser));
+                localStorage.setItem("copilots_user_token", currentUserToken);
+
+                showToast(`¡Cuenta creada con éxito! Bienvenido, ${currentUser.name}`);
+                updateHeaderUI();
+                e.target.reset();
+                showView("dashboard");
+            }
+        } else {
+            showToast(result.message || "Error al registrar la cuenta.", true);
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Error de red al intentar registrarse.", true);
+    }
 }
 
 function handleCustomerLogout() {
     currentUser = null;
+    currentUserToken = null;
     localStorage.removeItem("copilots_user");
+    localStorage.removeItem("copilots_user_token");
     updateHeaderUI();
     showToast("Sesión cerrada correctamente");
     showView("dashboard");
@@ -648,7 +702,10 @@ async function handlePlaceOrder() {
     try {
         const response = await fetch('/api/orders', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUserToken}`
+            },
             body: JSON.stringify(orderData)
         });
 
